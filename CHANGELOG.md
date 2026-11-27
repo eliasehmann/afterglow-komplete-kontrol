@@ -9,6 +9,8 @@
   `docs/website.md`.
 - The page's API now lives in one place (`api.dispatch`), shared by the app's
   local server and the website.
+- **Light up what I play** now lights pressed keys plain white instead of
+  colouring them by velocity.
 
 ## 1.0.0
 

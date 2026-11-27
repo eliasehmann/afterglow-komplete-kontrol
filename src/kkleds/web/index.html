@@ -693,7 +693,8 @@ $("#pClose").onclick = closePainter;
 $("#sClose").onclick = () => $("#scaler").classList.remove("open");
 $("#sRoot").onchange = applyScale;
 $("#sKind").onchange = applyScale;
-$("#playBtn").onclick = () => post("/api/play", { enabled: !(state && state.play.enabled) });
+// Pressed keys light up plain white (explicit, so older saved settings with velocity colours don't win).
+$("#playBtn").onclick = () => post("/api/play", { enabled: !(state && state.play.enabled), velocity: false, color: "white" });
 $("#pOff").onclick = () => setBrush("off");
 $("#pRgb").onchange = e => setBrush(e.target.value);
 $$("[data-fill]").forEach(b => (b.onclick = () => fillKeys(b.dataset.fill)));

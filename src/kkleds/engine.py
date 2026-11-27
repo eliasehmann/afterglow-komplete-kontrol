@@ -123,7 +123,7 @@ class Engine:
         self._base_cache: Optional[List[ColorValue]] = None  # last scene/animation frame
         self._base_t = 0.0
         # "Light up what I play": settings, and the open MIDI port while it's on
-        self.play: Dict[str, Any] = {"enabled": False, "velocity": True, "color": "white", "port": None}
+        self.play: Dict[str, Any] = {"enabled": False, "velocity": False, "color": "white", "port": None}
         self._play: Optional[Dict[str, Any]] = None
         self.play_error: Optional[str] = None
         self._dirty = False
@@ -150,7 +150,9 @@ class Engine:
             self.last_static = data["last_static"]
         self.hold = bool(data.get("hold", True))
         if isinstance(data.get("play"), dict):
-            self.play.update({k: v for k, v in data["play"].items() if k in self.play})
+            # Only on/off and the MIDI port come back; the look of pressed keys (white)
+            # isn't taken from older saved settings.
+            self.play.update({k: v for k, v in data["play"].items() if k in ("enabled", "port")})
 
     def _save_settings(self) -> None:
         self._dirty = False

@@ -106,6 +106,19 @@ def test_play_along_on_top_of_a_scene(played):
     assert e.state()["keys"][60 - 21] == "#000055"
 
 
+def test_play_along_is_white_by_default(played, tmp_path):
+    e, port = played
+    e.set_play({"enabled": True})
+    port.queue.append(FakeMsg("note_on", note=60, velocity=127))
+    tick(e)
+    assert e.state()["keys"][60 - 21] == "#ffffff"
+    # older saved settings with velocity colours don't bring them back
+    settings = tmp_path / "old.json"
+    settings.write_text(json.dumps({"play": {"enabled": False, "velocity": True, "color": "red"}}))
+    restored = Engine(REG, REG.get("s88-mk2"), dry_run=True, settings_file=settings)
+    assert restored.play["velocity"] is False and restored.play["color"] == "white"
+
+
 def test_play_along_sustain_pedal(played):
     e, port = played
     e.set_play({"enabled": True, "velocity": False, "color": "green"})

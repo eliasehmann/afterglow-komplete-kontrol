@@ -76,7 +76,7 @@ def test_play_along_through_web_midi(tmp_path):
     assert call(rt, "POST", "/api/play", {"enabled": True})[0] == 200
     rt.midi_message([0x90, 60, 127])
     rt.step()
-    assert call(rt, "GET", "/api/state")[1]["keys"][60 - 21] == "#ff0000"
+    assert call(rt, "GET", "/api/state")[1]["keys"][60 - 21] == "#ffffff"  # pressed keys light up white
     rt.midi_message([0x80, 60, 0])
     rt.step()
     assert call(rt, "GET", "/api/state")[1]["keys"][60 - 21] == "#000000"

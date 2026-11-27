@@ -41,7 +41,7 @@ Your last look is remembered, so the next start picks up where you left off.
 | **Custom** | Pick your own colours and a motion (still, flow, waves, pulse, flicker or twinkle), then save it as your own scene. |
 | **Paint your own** | Colour every key, every touch strip light and every button yourself, on a drawing of your keyboard. Save it as a look. |
 | **Scale guide** | Choose a key and a scale (major, minor, pentatonic, blues…). Its notes light up, with the root notes in red. |
-| **Light up what I play** | The switch at the top. The keys you press light up, from blue (soft) to red (hard), on top of whatever is showing. |
+| **Light up what I play** | The switch at the top. The keys you press light up white, on top of whatever is showing, and stay lit while you hold the sustain pedal. |
 | **Looks** | Ready-made static layouts and the ones you save. |
 
 ## Questions
