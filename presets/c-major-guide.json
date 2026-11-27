@@ -1,0 +1,7 @@
+{
+  "name": "C major scale, roots in red",
+  "layers": [
+    { "fill": "off" },
+    { "scale": "C major", "color": "white:1", "root": "red" }
+  ]
+}

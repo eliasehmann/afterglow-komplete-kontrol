@@ -1,0 +1,17 @@
+{
+  "name": "Split keyboard: bass / chords / lead",
+  "layers": [
+    { "fill": "off" },
+    { "keys": "A0-B2", "color": "blue" },
+    { "keys": "C3-B5", "color": "green:1" },
+    { "keys": "C6-C8", "color": "orange" },
+    { "keys": "C", "color": "white" }
+  ],
+  "buttons": {
+    "all": "dim",
+    "transport": "on",
+    "display": "blue:0",
+    "encoder": "cyan",
+    "strip": ["blue", "green", "orange"]
+  }
+}

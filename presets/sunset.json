@@ -1,0 +1,7 @@
+{
+  "name": "Sunset gradient with dim black keys",
+  "layers": [
+    { "keys": "all", "gradient": ["plum", "fuchsia", "orange", "warm_yellow"] },
+    { "keys": "black", "color": "plum:0" }
+  ]
+}

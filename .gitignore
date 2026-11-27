@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+# Your personal button map from `kkleds buttons-probe` (commit it if you want to share it)
+# buttons.json
