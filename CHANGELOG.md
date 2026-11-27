@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **New name: Afterglow** (was Kontrol LEDs). The app is now `Afterglow.exe`.
+  "Start with Windows" carries over from the old name.
 - **Website version:** the same app in Chrome or Edge, with nothing to
   install. It talks to the keyboard over WebHID and to play-along over
   Web MIDI, runs the real Python engine in the page (Pyodide), and stores your

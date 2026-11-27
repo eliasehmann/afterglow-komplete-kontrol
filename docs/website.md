@@ -1,6 +1,6 @@
 # The website version
 
-The same Kontrol LEDs, in the browser, with nothing to install. It's a static
+The same Afterglow, in the browser, with nothing to install. It's a static
 site: any web host with HTTPS works.
 
 ## How it works

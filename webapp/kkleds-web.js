@@ -1,4 +1,4 @@
-// Kontrol LEDs in the browser.
+// Afterglow in the browser.
 //
 // Loads Python (Pyodide) with the same kkleds package the desktop app uses,
 // connects the keyboard over WebHID and play-along over Web MIDI, keeps your
@@ -19,7 +19,7 @@
   const overlay = document.createElement("div");
   overlay.style.cssText = "position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#0c0d10;" +
     "color:#eceef2;font:16px system-ui,sans-serif;text-align:center;padding:24px";
-  overlay.innerHTML = `<div><div style="font-weight:700;font-size:22px;margin-bottom:10px">Kontrol LEDs</div>
+  overlay.innerHTML = `<div><div style="font-weight:700;font-size:22px;margin-bottom:10px">Afterglow</div>
     <div id="kkLoad">Loading… (the first visit downloads about 10 MB)</div></div>`;
   const showOverlay = () => document.body.appendChild(overlay);
   if (document.body) showOverlay(); else document.addEventListener("DOMContentLoaded", showOverlay);
@@ -113,7 +113,7 @@
     window.addEventListener("pagehide", () => syncfs(false).catch(() => {}));
     overlay.remove();
   })();
-  ready.catch(e => { console.error(e); if (e.message !== "WebHID not supported") say("Something went wrong loading Kontrol LEDs: " + e.message); });
+  ready.catch(e => { console.error(e); if (e.message !== "WebHID not supported") say("Something went wrong loading Afterglow: " + e.message); });
 
   // ------------------------------------------------------------------ the page's /api/... calls
   const realFetch = window.fetch.bind(window);

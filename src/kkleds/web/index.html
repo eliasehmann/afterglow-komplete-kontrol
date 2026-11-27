@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kontrol LEDs</title>
+<title>Afterglow</title>
 <style>
   :root {
     --bg: #0c0d10; --surface: #15171c; --surface2: #1c1f26; --line: #262a33;
@@ -142,7 +142,7 @@
 <body>
 <div class="wrap">
   <header>
-    <span class="logo">Kontrol LEDs</span>
+    <span class="logo">Afterglow</span>
     <span class="status" id="status"><i></i><span id="statusText">…</span><button class="small ghost" id="reconnect" hidden>Reconnect</button></span>
     <span class="now" id="now"></span>
     <span class="spacer"></span>
@@ -201,7 +201,7 @@
     <b>Tips</b>
     <ul>
       <li>Colours flicker or get replaced? Close the Komplete Kontrol app and your music software's keyboard integration: they control the lights too.</li>
-      <li id="tipApp">Using the Kontrol LEDs app? It keeps running in the system tray, next to the clock. Right-click its icon to start it with Windows or to quit.</li>
+      <li id="tipApp">Using the Afterglow app? It keeps running in the system tray, next to the clock. Right-click its icon to start it with Windows or to quit.</li>
       <li>Your last look comes back automatically the next time you start.</li>
     </ul>
     <span id="version"></span>
@@ -651,7 +651,7 @@ function render(st) {
 async function loadInfo() {
   info = await (await fetch("/api/info")).json();
   buildStage(); buildTiles(); buildEditor(); renderEditor(); buildPainter(); buildScaler();
-  $("#version").textContent = `Kontrol LEDs ${info.version}`;
+  $("#version").textContent = `Afterglow ${info.version}`;
   if (state) render(state);
 }
 

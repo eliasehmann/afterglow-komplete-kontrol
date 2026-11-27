@@ -1,4 +1,4 @@
-"""Run Kontrol LEDs inside a web page (Pyodide).
+"""Run Afterglow inside a web page (Pyodide).
 
 The same engine, scenes and profiles as the desktop app. The page's JavaScript
 (webapp/kkleds-web.js) gives us a small `bridge` object:

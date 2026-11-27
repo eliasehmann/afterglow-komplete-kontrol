@@ -108,13 +108,27 @@ def test_parse_midi():
     assert parse_midi([0xF8]) is None and parse_midi([0xE0, 0, 64]) is None
 
 
+def test_site_build_with_public_address(tmp_path):
+    out = tmp_path / "site"
+    subprocess.run([sys.executable, str(ROOT / "webapp" / "build.py"), str(out), "--url", "https://example.org/afterglow"],
+                   check=True, capture_output=True)
+    html = (out / "index.html").read_text(encoding="utf-8")
+    assert '<link rel="canonical" href="https://example.org/afterglow/">' in html
+    assert 'content="https://example.org/afterglow/screenshot.png"' in html
+    assert "Sitemap: https://example.org/afterglow/sitemap.xml" in (out / "robots.txt").read_text()
+    assert "<loc>https://example.org/afterglow/</loc>" in (out / "sitemap.xml").read_text()
+
+
 def test_site_build(tmp_path):
     out = tmp_path / "site"
     subprocess.run([sys.executable, str(ROOT / "webapp" / "build.py"), str(out)], check=True, capture_output=True)
     html = (out / "index.html").read_text(encoding="utf-8")
-    assert '<script src="kkleds-web.js"></script>' in html and "Kontrol LEDs" in html
+    assert '<script src="kkleds-web.js"></script>' in html and "Afterglow" in html
+    assert "<title>Afterglow: Komplete Kontrol light guide" in html and 'name="description"' in html
+    assert '"@type": "SoftwareApplication"' in html and 'property="og:title"' in html
+    assert "canonical" not in html  # no address given: no absolute links
     assert html.index("kkleds-web.js") < html.index('"use strict"')  # glue loads before the page's script
-    for name in ("kkleds-web.js", "kkleds.zip", "icon.png", ".nojekyll"):
+    for name in ("kkleds-web.js", "kkleds.zip", "icon.png", "screenshot.png", ".nojekyll"):
         assert (out / name).exists(), name
     names = zipfile.ZipFile(out / "kkleds.zip").namelist()
     assert "kkleds/browser.py" in names and "kkleds/profiles/komplete-kontrol-s-mk2.json" in names

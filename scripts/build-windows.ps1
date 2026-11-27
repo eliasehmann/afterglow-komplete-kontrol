@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Build dist\KontrolLEDs.exe: one file, no Python needed on the target PC.
+  Build dist\Afterglow.exe: one file, no Python needed on the target PC.
 
 .EXAMPLE
   .\scripts\build-windows.ps1            # runs the tests first
@@ -26,13 +26,13 @@ New-Item -ItemType Directory -Force build | Out-Null
 & $py -c "from kkleds.icon import save_ico; save_ico('build/icon.ico')"
 
 & $py -m PyInstaller --noconfirm --clean --onefile --windowed `
-    --name KontrolLEDs `
+    --name Afterglow `
     --icon build\icon.ico `
     --paths src `
     --collect-data kkleds `
     --hidden-import mido.backends.rtmidi `
     --hidden-import pystray._win32 `
-    packaging\kontrol_leds.py
+    packaging\afterglow.py
 if ($LASTEXITCODE) { throw "PyInstaller failed." }
 
-Get-Item dist\KontrolLEDs.exe | Select-Object Name, @{n = "MB"; e = { [math]::Round($_.Length / 1MB, 1) } }
+Get-Item dist\Afterglow.exe | Select-Object Name, @{n = "MB"; e = { [math]::Round($_.Length / 1MB, 1) } }

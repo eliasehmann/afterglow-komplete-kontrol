@@ -3,12 +3,31 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "kkleds"
+name = "afterglow"
 version = "1.0.0"
-description = "Light up Native Instruments Komplete Kontrol keyboards: ambient scenes, your own looks and play-along lights"
+description = "Custom light guide colours, LED scenes and play-along lights for Native Instruments Komplete Kontrol S88/S61/S49 MK2 keyboards"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = ["hidapi>=0.14"]
+keywords = [
+    "komplete-kontrol", "native-instruments", "light-guide", "s88-mk2", "s61-mk2", "s49-mk2",
+    "led", "rgb", "midi", "hid", "webhid", "keyboard-lighting", "ambient-lighting",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: Web Environment",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Sound/Audio :: MIDI",
+    "Topic :: System :: Hardware :: Hardware Drivers",
+]
+
+[project.urls]
+Homepage = "https://github.com/eliasehmann/kontrol-leds"
+Download = "https://github.com/eliasehmann/kontrol-leds/releases/latest"
+Changelog = "https://github.com/eliasehmann/kontrol-leds/blob/master/CHANGELOG.md"
 
 [project.optional-dependencies]
 midi = ["mido>=1.3", "python-rtmidi>=1.5"]
@@ -18,9 +37,10 @@ dev = ["pytest>=7"]
 
 [project.scripts]
 kkleds = "kkleds.cli:main"
+afterglow = "kkleds.cli:main"
 
 [project.gui-scripts]
-kontrol-leds = "kkleds.app:main"
+afterglow-app = "kkleds.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

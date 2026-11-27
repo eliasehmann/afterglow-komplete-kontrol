@@ -364,7 +364,7 @@ API = {"X-KKLeds": "1", "Content-Type": "application/json"}
 
 def test_web_pages_and_api(server):
     code, body = call(server + "/")
-    assert code == 200 and b"<title>Kontrol LEDs</title>" in body
+    assert code == 200 and b"<title>Afterglow</title>" in body
     code, body = call(server + "/api/info")
     assert code == 200 and json.loads(body)["profile"]["key"] == "s88-mk2"
     code, body = call(server + "/api/mode", {"mode": "solid", "color": "red"}, API)

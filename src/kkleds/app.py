@@ -18,7 +18,7 @@ from typing import List, Optional
 
 from . import __version__
 
-APP_NAME = "Kontrol LEDs"
+APP_NAME = "Afterglow"
 DEFAULT_PORT = 8765
 
 
@@ -31,7 +31,7 @@ def _already_running(port: int) -> bool:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    p = argparse.ArgumentParser(prog="KontrolLEDs", description=f"{APP_NAME} {__version__}")
+    p = argparse.ArgumentParser(prog="Afterglow", description=f"{APP_NAME} {__version__}")
     p.add_argument("--background", action="store_true", help="start without opening the browser (used at login)")
     p.add_argument("--port", type=int, default=DEFAULT_PORT)
     p.add_argument("--dry-run", action="store_true", help="preview only, don't touch the keyboard")
@@ -81,6 +81,11 @@ def _run_tray(engine, url: str) -> None:
 
     from . import autostart
 
+    try:
+        autostart.migrate()  # 'Start with Windows' set under the old name keeps working
+    except OSError:
+        pass
+
     def open_ui(icon, item):
         webbrowser.open(url)
 
@@ -102,7 +107,7 @@ def _run_tray(engine, url: str) -> None:
                          checked=lambda item: autostart.is_enabled(), visible=autostart.supported()),
         pystray.MenuItem("Quit", quit_app),
     )
-    pystray.Icon("kontrol-leds", make_icon(64), APP_NAME, menu).run()
+    pystray.Icon("afterglow", make_icon(64), APP_NAME, menu).run()
 
 
 if __name__ == "__main__":

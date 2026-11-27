@@ -1,22 +1,34 @@
-# Kontrol LEDs
+# Afterglow: custom light guide colours for Komplete Kontrol keyboards
 
-Make your **Native Instruments Komplete Kontrol** keyboard glow: ambient scenes
-like fire, ocean and aurora, your own colours on every key, a scale guide for
-practising, and keys that light up as you play.
+**Afterglow** is a free app that sets your own colours on the **light guide**
+(the LEDs above the keys) of **Native Instruments Komplete Kontrol S-Series MK2**
+keyboards: the **S88 MK2**, **S61 MK2** and **S49 MK2**. It also controls the
+**button lights** and the **touch strip**.
 
-![Kontrol LEDs](docs/screenshot.png)
+- **Scenes:** 14 animated ambient lighting scenes, such as fire, ocean, aurora,
+  rain and thunderstorm.
+- **Your own colours:** a colour for every key, the touch strip and the
+  buttons.
+- **Scale guide:** lights up the notes of any scale, for practising.
+- **Play-along:** the keys you play light up.
 
-> Kontrol LEDs is a free hobby project. It is not made by or affiliated with
+It works without the Komplete Kontrol software or a DAW. Use the Windows app,
+or the website in Chrome or Edge with nothing to install.
+
+![Afterglow: light guide scenes and colours on a Komplete Kontrol S88 MK2](docs/screenshot.png)
+
+> Afterglow is a free, open hobby project. It is not made by, endorsed by or
+> affiliated with Native Instruments. Komplete Kontrol is a trademark of
 > Native Instruments.
 
 ## Get started
 
 You don't need any technical knowledge.
 
-1. **Download** `KontrolLEDs.exe` from the
+1. **Download** `Afterglow.exe` from the
    [latest release](https://github.com/eliasehmann/kontrol-leds/releases/latest).
 2. **Plug in** your keyboard and switch it on.
-3. **Double-click** `KontrolLEDs.exe`. The app opens in your web browser.
+3. **Double-click** `Afterglow.exe`. The app opens in your web browser.
    - If Windows says *"Windows protected your PC"*, click **More info →
      Run anyway**. This appears because the app isn't signed by a big company,
      not because something is wrong.
@@ -46,6 +58,23 @@ Your last look is remembered, so the next start picks up where you left off.
 
 ## Questions
 
+**How do I change the light guide colours on my Komplete Kontrol S88 MK2 (or S61 / S49 MK2)?**
+Open Afterglow and pick a scene, or use *Paint your own* to set every key's
+colour yourself. The keyboard changes straight away.
+
+**Can I turn the light guide LEDs off completely?**
+Yes. Click **Turn off** in the app, or right-click the tray icon and choose
+**Turn lights off**. The keys, buttons and touch strip all go dark.
+
+**Does it work without Komplete Kontrol, Maschine or a DAW?**
+Yes. Afterglow talks to the keyboard directly over USB. It works with any DAW
+open, or with none at all.
+
+**Which keyboards are supported?**
+The Komplete Kontrol S-Series MK2 (S88, S61, S49) is supported, and the MK1
+key lights may work. The S-Series MK3 and the A-Series / M-Series aren't
+supported yet. See [Supported keyboards](#supported-keyboards).
+
 **It says it can't find my keyboard.**
 Check that the keyboard is plugged in and switched on. The app connects by
 itself within a couple of seconds. If it still doesn't, quit the Komplete
@@ -53,7 +82,7 @@ Kontrol app and try again.
 
 **My colours flicker or get replaced.**
 The Komplete Kontrol app and your music software's keyboard integration also
-control the lights. Close them while you use Kontrol LEDs.
+control the lights. Close them while you use Afterglow.
 
 **Some buttons only light up white.**
 That's the keyboard's hardware: on the S88 MK2, only the keys, the touch strip,
@@ -122,7 +151,7 @@ instead of on the keyboard.
 ### Building the app
 
 ```powershell
-.\scripts\build-windows.ps1          # runs the tests, then builds dist\KontrolLEDs.exe
+.\scripts\build-windows.ps1          # runs the tests, then builds dist\Afterglow.exe
 ```
 
 ### The website version
