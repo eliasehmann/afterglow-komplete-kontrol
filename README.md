@@ -1,5 +1,11 @@
 # Afterglow: custom light guide colours for Komplete Kontrol keyboards
 
+<p align="center">
+  <a href="https://eliasehmann.github.io/afterglow-komplete-kontrol/"><img alt="Try the live demo in your browser" src="https://img.shields.io/badge/%E2%96%B6%20Try%20the%20live%20demo-in%20your%20browser-ff8a3d?style=for-the-badge"></a>
+  &nbsp;
+  <a href="https://github.com/eliasehmann/afterglow-komplete-kontrol/releases/latest"><img alt="Download Afterglow for Windows" src="https://img.shields.io/badge/%E2%AC%87%20Download-for%20Windows-2b2f38?style=for-the-badge"></a>
+</p>
+
 **Afterglow** is a free app that sets your own colours on the **light guide**
 (the LEDs above the keys) of **Native Instruments Komplete Kontrol S-Series MK2**
 keyboards: the **S88 MK2**, **S61 MK2** and **S49 MK2**. It also controls the
