@@ -45,6 +45,18 @@ clock. Right-click its keyboard icon to:
 
 Your last look is remembered, so the next start picks up where you left off.
 
+### Or try it in your browser, with no download
+
+Open **[eliasehmann.github.io/afterglow-komplete-kontrol](https://eliasehmann.github.io/afterglow-komplete-kontrol/)**
+in **Chrome or Edge**, click **Connect keyboard** and choose your Komplete
+Kontrol.
+
+- **Same features as the app**, as long as the tab is open.
+- **When you close the tab,** a still look stays on the keyboard, but scenes
+  stop.
+- **For lights that keep running** and come back after a restart, use the
+  app.
+
 ## What you can do
 
 | | |

@@ -45,12 +45,13 @@ python -m http.server 8800 --bind 127.0.0.1 --directory site
 
 ## Hosting
 
-Upload the contents of `site\` to any static host with HTTPS:
+The site is live at
+https://eliasehmann.github.io/afterglow-komplete-kontrol/.
+`.github/workflows/pages.yml` rebuilds and publishes it on GitHub Pages every
+time `master` changes, with that address passed as `--url`.
 
-- **GitHub Pages:** free for public repositories; a private repo needs a paid
-  plan for Pages. One option is a separate public repo that contains only the
-  built `site\`. `.nojekyll` is already included.
-- **Netlify or Cloudflare Pages:** drag and drop the `site` folder.
+The built `site\` also works on any other static host with HTTPS, such as
+Netlify or Cloudflare Pages.
 
 The "Windows app" link on the page points to this repo's latest release. Set
 `window.KKLEDS_APP_URL` in `webapp/kkleds-web.js` if the app is published
