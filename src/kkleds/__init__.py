@@ -4,4 +4,4 @@ from .layout import Frame
 from .profile import Profile, Registry, load_registry
 
 __all__ = ["Frame", "Profile", "Registry", "load_registry"]
-__version__ = "1.0.0"
+__version__ = "1.1.0"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "afterglow"
-version = "1.0.0"
+version = "1.1.0"
 description = "Custom light guide colours, LED scenes and play-along lights for Native Instruments Komplete Kontrol S88/S61/S49 MK2 keyboards"
 readme = "README.md"
 requires-python = ">=3.9"

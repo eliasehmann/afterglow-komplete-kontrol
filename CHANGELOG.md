@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0
 
 - **New name: Afterglow** (was Kontrol LEDs). The app is now `Afterglow.exe`.
   "Start with Windows" carries over from the old name.
