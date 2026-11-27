@@ -7,7 +7,7 @@
 (() => {
   "use strict";
   window.KKLEDS_WEB = true;
-  window.KKLEDS_APP_URL = window.KKLEDS_APP_URL || "https://github.com/eliasehmann/kontrol-leds/releases/latest";
+  window.KKLEDS_APP_URL = window.KKLEDS_APP_URL || "https://github.com/eliasehmann/afterglow-komplete-kontrol/releases/latest";
 
   const PYODIDE = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
   const NI_VENDOR = 0x17cc;

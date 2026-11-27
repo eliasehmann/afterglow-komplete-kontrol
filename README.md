@@ -26,7 +26,7 @@ or the website in Chrome or Edge with nothing to install.
 You don't need any technical knowledge.
 
 1. **Download** `Afterglow.exe` from the
-   [latest release](https://github.com/eliasehmann/kontrol-leds/releases/latest).
+   [latest release](https://github.com/eliasehmann/afterglow-komplete-kontrol/releases/latest).
 2. **Plug in** your keyboard and switch it on.
 3. **Double-click** `Afterglow.exe`. The app opens in your web browser.
    - If Windows says *"Windows protected your PC"*, click **More info →
@@ -120,8 +120,8 @@ in `src/kkleds/profiles/`. To add a keyboard, you write a profile, not code: see
 ### Setup
 
 ```powershell
-git clone https://github.com/eliasehmann/kontrol-leds.git
-cd kontrol-leds
+git clone https://github.com/eliasehmann/afterglow-komplete-kontrol.git
+cd afterglow-komplete-kontrol
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -e ".[app,dev]"

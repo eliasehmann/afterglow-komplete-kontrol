@@ -25,9 +25,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/eliasehmann/kontrol-leds"
-Download = "https://github.com/eliasehmann/kontrol-leds/releases/latest"
-Changelog = "https://github.com/eliasehmann/kontrol-leds/blob/master/CHANGELOG.md"
+Homepage = "https://github.com/eliasehmann/afterglow-komplete-kontrol"
+Download = "https://github.com/eliasehmann/afterglow-komplete-kontrol/releases/latest"
+Changelog = "https://github.com/eliasehmann/afterglow-komplete-kontrol/blob/master/CHANGELOG.md"
 
 [project.optional-dependencies]
 midi = ["mido>=1.3", "python-rtmidi>=1.5"]
