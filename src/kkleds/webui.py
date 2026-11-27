@@ -16,7 +16,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from .device import DeviceError
+from .api import dispatch
 from .engine import Engine
 
 INDEX = Path(__file__).parent / "web" / "index.html"
@@ -55,13 +55,7 @@ def make_handler(engine: Engine):
             path = self.path.split("?", 1)[0]
             if path in ("/", "/index.html"):
                 return self._send(200, INDEX.read_bytes(), "text/html; charset=utf-8")
-            if path == "/api/info":
-                return self._json(200, engine.info())
-            if path == "/api/state":
-                return self._json(200, engine.state())
-            if path == "/api/previews":
-                return self._json(200, engine.previews())
-            return self._json(404, {"error": "not found"})
+            return self._json(*dispatch(engine, "GET", path))
 
         def do_POST(self):
             if not self._host_ok() or self.headers.get("X-KKLeds") != "1":
@@ -76,35 +70,7 @@ def make_handler(engine: Engine):
             except ValueError as e:
                 return self._json(400, {"error": f"bad JSON: {e}"})
 
-            path = self.path.split("?", 1)[0]
-            try:
-                extra = {}
-                if path == "/api/mode":
-                    engine.set_mode(body)
-                elif path == "/api/buttons":
-                    engine.set_buttons(body)
-                elif path == "/api/play":
-                    engine.set_play(body)
-                elif path == "/api/hold":
-                    engine.set_hold(body.get("hold", True))
-                elif path == "/api/connect":
-                    engine.connect(body.get("model"))
-                elif path == "/api/off":
-                    engine.all_off()
-                elif path == "/api/presets/save":
-                    extra["path"] = engine.save_preset(str(body.get("name", "")).strip())
-                elif path == "/api/presets/delete":
-                    engine.delete_preset(str(body.get("name", "")).strip())
-                elif path == "/api/scenes/save":
-                    extra["path"] = engine.save_scene(str(body.get("name", "")).strip(),
-                                                      list(body.get("colors") or []), str(body.get("motion", "flow")))
-                elif path == "/api/scenes/delete":
-                    engine.delete_scene(str(body.get("name", "")).strip())
-                else:
-                    return self._json(404, {"error": "not found"})
-            except (ValueError, KeyError, TypeError, DeviceError) as e:
-                return self._json(400, {"error": str(e)})
-            return self._json(200, {"ok": True, "state": engine.state(), **extra})
+            return self._json(*dispatch(engine, "POST", self.path.split("?", 1)[0], body))
 
     return Handler
 

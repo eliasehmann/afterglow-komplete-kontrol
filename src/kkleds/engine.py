@@ -91,8 +91,11 @@ def list_custom_scenes() -> List[Dict[str, Any]]:
 
 class Engine:
     def __init__(self, registry: Registry, profile: Optional[Profile] = None, dry_run: bool = False,
-                 path: Optional[str] = None, settings_file: Optional[Path] = None):
+                 path: Optional[str] = None, settings_file: Optional[Path] = None, device_factory=None):
         self.settings_file = settings_file  # None = don't remember anything (tests, CLI dry runs)
+        # device_factory(registry, profile, path) -> device: lets something other than USB HID
+        # provide the keyboard (the web version uses WebHID). Raises DeviceError if none.
+        self.device_factory = device_factory
         self.registry = registry
         self.requested = profile
         self._preview_lock = threading.Lock()  # tile previews don't need (or block) the device lock
@@ -176,6 +179,8 @@ class Engine:
             try:
                 if self.dry_run:
                     self.dev = MemoryDevice(self.requested or self.registry.get(DEFAULT_DRY_RUN))
+                elif self.device_factory is not None:
+                    self.dev = self.device_factory(self.registry, self.requested, self.path)
                 else:
                     self.dev = HidDevice.open(self.registry, self.requested, self.path)
                 self.profile = self.dev.profile
@@ -647,40 +652,44 @@ class Engine:
     def _loop(self) -> None:
         while not self._stop.is_set():
             start = time.monotonic()
-            with self.lock:
-                if self.dev is None and not self.dry_run and start - self._last_attempt >= RECONNECT_INTERVAL:
-                    self._last_attempt = start
-                    self.connect()  # keyboard unplugged or switched off: keep trying
-                try:
-                    self._tick(start)
-                except (DeviceError, OSError) as e:
-                    self.error = f"Lost the device: {e}"
-                    try:
-                        self.dev.close()
-                    except Exception:
-                        pass
-                    self.dev = None
-                except Exception as e:  # a broken mode must not kill the engine
-                    self.error = f"{type(e).__name__}: {e}"
-                    self._close_follow()
-                    self._gen = None
-                    self._scene = None
-                    self.mode = {"mode": "off"}
-                    self._static_keys = [colors.OFF] * self.profile.key_count
-                if self._dirty and start - self._last_save >= 1.0:
-                    self._last_save = start
-                    self._save_settings()
-                if self._play is not None or self._follow is not None:
-                    interval = 1.0 / 120  # react to playing right away
-                elif self._scene is not None:
-                    interval = 1.0 / SCENE_FPS
-                elif self._gen is not None:
-                    interval = 1.0 / self._fps
-                elif self.strip_mode.get("mode") in ("mirror", "meter"):
-                    interval = 1.0 / 30
-                else:
-                    interval = 0.1
+            interval = self.step(start)
             self._stop.wait(max(0.0, interval - (time.monotonic() - start)))
+
+    def step(self, start: float) -> float:
+        """One round of the engine; returns how many seconds until the next one is due.
+        Runs on the background thread, or is called by the web page's timer."""
+        with self.lock:
+            if self.dev is None and not self.dry_run and start - self._last_attempt >= RECONNECT_INTERVAL:
+                self._last_attempt = start
+                self.connect()  # keyboard unplugged or switched off: keep trying
+            try:
+                self._tick(start)
+            except (DeviceError, OSError) as e:
+                self.error = f"Lost the device: {e}"
+                try:
+                    self.dev.close()
+                except Exception:
+                    pass
+                self.dev = None
+            except Exception as e:  # a broken mode must not kill the engine
+                self.error = f"{type(e).__name__}: {e}"
+                self._close_follow()
+                self._gen = None
+                self._scene = None
+                self.mode = {"mode": "off"}
+                self._static_keys = [colors.OFF] * self.profile.key_count
+            if self._dirty and start - self._last_save >= 1.0:
+                self._last_save = start
+                self._save_settings()
+            if self._play is not None or self._follow is not None:
+                return 1.0 / 120  # react to playing right away
+            if self._scene is not None:
+                return 1.0 / SCENE_FPS
+            if self._gen is not None:
+                return 1.0 / self._fps
+            if self.strip_mode.get("mode") in ("mirror", "meter"):
+                return 1.0 / 30
+            return 0.1
 
     def _base_keys(self, now: float) -> List[ColorValue]:
         """The current mode's key colours. Scenes and animations render at their own

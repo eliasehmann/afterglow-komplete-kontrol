@@ -125,6 +125,18 @@ instead of on the keyboard.
 .\scripts\build-windows.ps1          # runs the tests, then builds dist\KontrolLEDs.exe
 ```
 
+### The website version
+
+The same app also runs in the browser, with no install, over WebHID and
+Web MIDI. Python runs inside the page via Pyodide.
+
+```powershell
+python webapp\build.py               # builds site\, a static site for any HTTPS host
+```
+
+See [docs/website.md](docs/website.md) for how it works, its limits and
+hosting.
+
 ### How it works
 
 - **USB:** the keyboard's lights are driven over USB HID. For the S MK2 there
@@ -146,6 +158,7 @@ instead of on the keyboard.
 | `layout.py`, `buttons.py` | painting keys, buttons and the touch strip |
 | `scenes.py`, `effects.py` | ambient scenes (with dithering) and simple animations |
 | `engine.py` | keeps the keyboard connected and runs the current mode, play-along and settings |
-| `webui.py`, `web/index.html` | the app's page and its local API |
+| `api.py`, `webui.py`, `web/index.html` | the page, its API, and the local server the app uses |
+| `browser.py`, `webapp/` | the website version: the engine in the browser over WebHID and Web MIDI |
 | `app.py`, `autostart.py`, `icon.py` | the desktop app: tray icon, single instance, start with Windows |
 | `device.py`, `midi.py`, `cli.py` | HID access, MIDI input, the `kkleds` command |

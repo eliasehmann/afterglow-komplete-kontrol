@@ -201,7 +201,7 @@
     <b>Tips</b>
     <ul>
       <li>Colours flicker or get replaced? Close the Komplete Kontrol app and your music software's keyboard integration: they control the lights too.</li>
-      <li>Using the Kontrol LEDs app? It keeps running in the system tray, next to the clock. Right-click its icon to start it with Windows or to quit.</li>
+      <li id="tipApp">Using the Kontrol LEDs app? It keeps running in the system tray, next to the clock. Right-click its icon to start it with Windows or to quit.</li>
       <li>Your last look comes back automatically the next time you start.</li>
     </ul>
     <span id="version"></span>
@@ -214,6 +214,7 @@
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const OFF = "#22252c";
+const WEB = !!window.KKLEDS_WEB;  // set by the web version (webapp/kkleds-web.js)
 const MOTION_LABEL = { still: "Still", flow: "Flow", waves: "Waves", pulse: "Pulse", flicker: "Flicker", twinkle: "Twinkle" };
 let info = null, state = null, speed = 1, brightness = "high";
 let custom = { colors: ["red", "orange", "fuchsia"], motion: "flow", name: null };
@@ -609,8 +610,10 @@ function render(st) {
   $("#reconnect").hidden = st.connected;
   const banner = $("#banner");
   if (!st.connected && !st.dry_run) {
-    banner.textContent = "Can't find your keyboard. Plug it in and switch it on: it connects by itself. " +
-      "If it's already on, close the Komplete Kontrol app for a moment and it will connect.";
+    banner.textContent = WEB
+      ? "Click “Connect keyboard” at the top and choose your Komplete Kontrol in the pop-up."
+      : "Can't find your keyboard. Plug it in and switch it on: it connects by itself. " +
+        "If it's already on, close the Komplete Kontrol app for a moment and it will connect.";
     banner.style.display = "block";
   } else if (st.play.error) {
     banner.textContent = "“Light up what I play” can't hear the keyboard: " + st.play.error;
@@ -705,6 +708,15 @@ $("#pSave").onclick = async () => {
   await flushButtons();
   if (await post("/api/presets/save", { name })) { toast(`Saved “${name}”`, true); loadInfo(); }
 };
+
+if (WEB) {
+  const rc = $("#reconnect");
+  rc.textContent = "Connect keyboard"; rc.className = "";
+  rc.style.borderColor = "var(--accent)";
+  $("#tipApp").innerHTML = "This page drives the lights while it's open; a static look stays when you close it. " +
+    "For scenes that keep running and lights that come back after a restart, use the " +
+    `<a href="${esc(window.KKLEDS_APP_URL || "#")}" style="color:var(--accent)">Windows app</a>.`;
+}
 
 (async () => {
   try {

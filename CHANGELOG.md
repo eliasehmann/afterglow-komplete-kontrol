@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **Website version:** the same app in Chrome or Edge, with nothing to
+  install. It talks to the keyboard over WebHID and to play-along over
+  Web MIDI, runs the real Python engine in the page (Pyodide), and stores your
+  looks in the browser. Build it with `python webapp\build.py`; see
+  `docs/website.md`.
+- The page's API now lives in one place (`api.dispatch`), shared by the app's
+  local server and the website.
+
 ## 1.0.0
 
 The first release for everyone, as a Windows app: download, double-click, done.
