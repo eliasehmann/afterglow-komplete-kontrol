@@ -191,6 +191,7 @@ class Profile:
     buttons: Optional[ButtonSection] = None
     source: str = ""
     notes: str = ""
+    panel: Optional[dict] = None  # optional drawing of the control panel for the UI
     path: Optional[Path] = None
 
     @property
@@ -261,8 +262,29 @@ def _build(key: str, family: str, data: dict, path: Optional[Path]) -> Profile:
         buttons=ButtonSection.from_json(data["buttons"], where) if data.get("buttons") else None,
         source=data.get("source", ""),
         notes=data.get("notes", ""),
+        panel=data.get("panel") or None,
         path=path,
     )
+
+
+PANEL_BLOCKS = ("buttons", "strip", "screens", "knobs", "encoder", "wheels")
+
+
+def panel_blocks(panel: dict) -> List[dict]:
+    """All blocks of a panel drawing: the top panel's columns plus the side module."""
+    blocks = [block for column in panel.get("columns", []) for block in column]
+    return blocks + list(panel.get("side", []))
+
+
+def panel_names(panel: dict) -> List[str]:
+    """Every LED name a panel drawing refers to ("#name" = drawn only, not controllable)."""
+    names = []
+    for block in panel_blocks(panel):
+        if block.get("type") == "buttons":
+            names += [n for row in block.get("rows", []) for n in row]
+        elif block.get("type") == "encoder":
+            names += [block[d] for d in ("up", "down", "left", "right") if d in block]
+    return names
 
 
 def load_data(data: dict, path: Optional[Path] = None) -> List[Profile]:
@@ -311,6 +333,16 @@ def validate(profile: Profile) -> List[str]:
             seen.setdefault(slot, name)
     if lg is None and b is None:
         problems.append("profile has neither a light_guide nor buttons")
+    if profile.panel:
+        if b is None:
+            problems.append("panel needs a buttons section")
+        else:
+            for block in panel_blocks(profile.panel):
+                if block.get("type") not in PANEL_BLOCKS:
+                    problems.append(f"panel block type {block.get('type')!r} is not one of {', '.join(PANEL_BLOCKS)}")
+            for name in panel_names(profile.panel):
+                if not name.startswith("#") and name not in b.leds:
+                    problems.append(f"panel refers to unknown LED {name!r} (use '#{name}' for a drawn-only control)")
     return problems
 
 

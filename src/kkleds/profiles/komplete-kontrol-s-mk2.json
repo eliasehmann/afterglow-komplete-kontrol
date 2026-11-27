@@ -68,6 +68,46 @@
     },
     "color": ["mute", "solo", "display", "encoder", "strip"]
   },
+  "panel": {
+    "note": "Laid out after a top-view photo of the S88 MK2: controls centred above the keys, wheels and touch strip on the left.",
+    "labels": {
+      "shift": "SHIFT", "scale_edit": "SCALE EDIT", "arp_edit": "ARP EDIT", "undo_redo": "UNDO REDO", "quantize": "QUANTIZE", "auto": "AUTO",
+      "loop": "LOOP", "metro": "METRO", "tempo": "TEMPO", "play": "PLAY", "rec": "REC", "stop": "STOP",
+      "fixed_vel": "FIXED VEL", "octave_down": "OCT -", "octave_up": "OCT +",
+      "browser": "BROWSER", "plugin": "PLUG-IN", "mixer": "MIXER", "instance": "INSTANCE", "midi": "MIDI", "setup": "SETUP",
+      "scene": "SCENE", "pattern": "PATTERN", "track": "TRACK", "key_mode": "KEY MODE", "clear": "CLEAR",
+      "preset_up": "PRESET ▲", "preset_down": "PRESET ▼", "preset_left": "◀", "preset_right": "▶",
+      "mute": "M", "solo": "S"
+    },
+    "columns": [
+      [
+        { "type": "buttons", "rows": [["shift", "scale_edit", "arp_edit"], ["undo_redo", "quantize", "auto"]] },
+        { "type": "buttons", "gap": true, "rows": [["loop", "metro", "tempo"], ["play", "rec", "stop"]] }
+      ],
+      [
+        { "type": "buttons", "size": "square", "rows": [["mute", "solo"]] },
+        { "type": "buttons", "gap": true, "rows": [["preset_up"], ["preset_down"]] },
+        { "type": "buttons", "size": "square", "rows": [["preset_left", "preset_right"]] }
+      ],
+      [
+        { "type": "buttons", "rows": [["scene"], ["pattern"], ["track"], ["key_mode"], ["clear"]] }
+      ],
+      [
+        { "type": "buttons", "display": true, "rows": [["display_1", "display_2", "display_3", "display_4", "display_5", "display_6", "display_7", "display_8"]] },
+        { "type": "screens", "count": 2 },
+        { "type": "knobs", "count": 8 }
+      ],
+      [
+        { "type": "buttons", "rows": [["browser", "plugin", "mixer"], ["instance", "midi", "setup"]] },
+        { "type": "encoder", "up": "encoder_up", "down": "encoder_down", "left": "encoder_left", "right": "encoder_right" }
+      ]
+    ],
+    "side": [
+      { "type": "buttons", "size": "small", "rows": [["fixed_vel", "#octave_down", "#octave_up"]] },
+      { "type": "wheels", "count": 2 },
+      { "type": "strip" }
+    ]
+  },
   "variants": {
     "s49-mk2": {
       "name": "Komplete Kontrol S49 MK2",

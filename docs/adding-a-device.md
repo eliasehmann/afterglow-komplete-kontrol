@@ -111,6 +111,38 @@ Each built-in profile is tested for loading, validation and unique IDs.
 
 (JSON has no comments. Leave out the `//` notes in real files.)
 
+### Panel drawing (optional)
+
+A `panel` section lets the UI draw the device like the real thing, with every
+button in its place. Without one, the UI shows the buttons in a plain row.
+
+```jsonc
+"panel": {
+  "labels": { "play": "PLAY", "mute": "M" },        // text on each button (default: the name)
+  "columns": [                                      // top panel, left to right, centred
+    [ { "type": "buttons", "rows": [["shift", "scale_edit"], ["play", "rec"]] },
+      { "type": "buttons", "gap": true, "size": "square", "rows": [["mute", "solo"]] } ],
+    [ { "type": "buttons", "display": true, "rows": [["display_1", "display_2"]] },
+      { "type": "screens", "count": 2 },
+      { "type": "knobs", "count": 8 } ],
+    [ { "type": "encoder", "up": "encoder_up", "down": "encoder_down", "left": "encoder_left", "right": "encoder_right" } ]
+  ],
+  "side": [                                         // module to the left of the keys
+    { "type": "buttons", "size": "small", "rows": [["fixed_vel", "#octave_down"]] },
+    { "type": "wheels", "count": 2 },
+    { "type": "strip" }
+  ]
+}
+```
+
+- **Block types:** `buttons` (rows of LED names), `strip`, `screens`, `knobs`,
+  `wheels` and `encoder`. Screens, knobs and wheels are drawn only.
+- **`#name`:** draws a control that has no LED you can set, such as the
+  S MK2's octave buttons.
+- **Options:** `gap` adds space above a block, and `size` can be `square` or
+  `small`.
+- **Checks:** `kkleds profile-check` reports unknown names and block types.
+
 ### How variants work
 
 A variant inherits everything from the family. Any key it sets replaces the

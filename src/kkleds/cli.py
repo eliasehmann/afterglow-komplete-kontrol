@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from . import buttons as btn
-from . import colors, notes
+from . import colors, midi, notes
 from .device import DeviceError, DryRunDevice, HidDevice, list_interfaces, path_str
 from .effects import EFFECTS
 from .layout import Frame
@@ -253,7 +253,18 @@ def cmd_piano(args) -> None:
 
 
 def cmd_preset(args) -> None:
-    data = json.loads(Path(args.file).read_text(encoding="utf-8"))
+    from .engine import _preset_path, list_presets
+
+    if args.list or not args.file:
+        for p in list_presets():
+            print(f"{p['name']:<20} {p['source']:<9} {p['title']}")
+        return
+    path = Path(args.file)
+    if not path.is_file():  # a look's name: built-in or saved from the UI
+        path = _preset_path(args.file)
+        if path is None:
+            raise ValueError(f"no look or file named {args.file!r}; see `kkleds preset --list`")
+    data = json.loads(path.read_text(encoding="utf-8"))
     with open_device(args) as dev:
         has_layers = not isinstance(data, dict) or "layers" in data
         if isinstance(data, dict) and "buttons" in data:
@@ -298,36 +309,14 @@ def cmd_animate(args) -> None:
                 dev.write_buttons(saved.values)
 
 
-VELOCITY_HUES = ("blue", "turquoise", "cyan", "mint", "green", "lime", "yellow",
-                 "warm_yellow", "light_orange", "orange", "red")
-
-
-def _pick_midi_port(mido, wanted: Optional[str]) -> str:
-    ports = mido.get_input_names()
-    if wanted:
-        for p in ports:
-            if wanted.lower() in p.lower():
-                return p
-        raise DeviceError(f"No MIDI input matching {wanted!r}. Available: {ports}")
-    for test in (lambda p: "mk2 midi" in p, lambda p: "kontrol" in p and "ext" not in p):
-        for p in ports:
-            if test(p.lower()):
-                return p
-    raise DeviceError(f"Could not find the keyboard's MIDI input; pass --port. Available: {ports}")
-
-
 def cmd_follow(args) -> None:
-    try:
-        import mido
-    except ImportError as e:
-        raise DeviceError("follow needs MIDI support: pip install -e .[midi]") from e
-
+    mido = midi.load_mido()
     if args.list_ports:
         for p in mido.get_input_names():
             print(p)
         return
 
-    port_name = _pick_midi_port(mido, args.port)
+    port_name = midi.pick_port(args.port)
     highlight = colors.parse(args.color)
     with open_device(args) as dev:
         base = base_frame(dev.profile, args.base)
@@ -368,8 +357,7 @@ def cmd_follow(args) -> None:
                             down.add(msg.note)
                             sustained.discard(msg.note)
                             if args.velocity:
-                                hue = VELOCITY_HUES[msg.velocity * len(VELOCITY_HUES) // 128]
-                                light(msg.note, colors.make(hue))
+                                light(msg.note, colors.make(midi.velocity_hue(msg.velocity)))
                             else:
                                 light(msg.note, highlight)
                             if meter:
@@ -520,6 +508,54 @@ def cmd_strip(args) -> None:
             hold_buttons(dev, frame)
 
 
+def cmd_scene(args) -> None:
+    from . import scenes
+
+    if args.list or not args.name:
+        for s in scenes.SCENES.values():
+            print(f"{s.id:<10} {s.name:<14} {s.description}")
+        return
+    scene = scenes.make(args.name)
+    level = scenes.brightness_factor(args.brightness)
+    with open_device(args) as dev:
+        saved = btn.load_state(dev.profile) if dev.profile.buttons else None
+        print(f"Playing {scene.name}. Ctrl+C to stop.", file=sys.stderr)
+        t, last = 0.0, time.monotonic()
+        deadline = last + args.duration if args.duration else None
+        try:
+            while True:
+                now = time.monotonic()
+                dt = min(0.2, now - last)
+                last = now
+                t += dt * args.speed
+                scene.update(t, dt * args.speed)
+                keys, button_values = scenes.render(scene, dev.profile, level)
+                if keys:
+                    dev.write_keys(keys)
+                if button_values is not None:
+                    dev.write_buttons(button_values)
+                if deadline and now >= deadline:
+                    break
+                time.sleep(max(0.0, 1 / 30 - (time.monotonic() - now)))
+        except KeyboardInterrupt:
+            pass
+        if not args.keep:
+            if dev.profile.light_guide:
+                dev.write_keys([colors.OFF] * dev.profile.key_count)
+            if saved:
+                dev.write_buttons(saved.values)
+
+
+def cmd_ui(args) -> None:
+    from .engine import SETTINGS_FILE, Engine
+    from .webui import serve
+
+    engine = Engine(registry(args), chosen_profile(args), dry_run=args.dry_run, path=args.path,
+                    settings_file=None if args.dry_run else SETTINGS_FILE)
+    engine.set_hold(not args.no_hold)
+    serve(engine, port=args.port, open_browser=not args.no_browser)
+
+
 def cmd_raw(args) -> None:
     data = bytes(int(b, 16) for b in args.bytes)
     with open_device(args) as dev:
@@ -559,6 +595,19 @@ def build_parser() -> argparse.ArgumentParser:
         sp = sub.add_parser(name, parents=[common], help=help_, description=help_)
         sp.set_defaults(func=func)
         return sp
+
+    sp = add("ui", cmd_ui, "open the browser UI (modes, colours, buttons, presets)")
+    sp.add_argument("--port", type=int, default=8765, help="local port (default 8765)")
+    sp.add_argument("--no-browser", action="store_true", help="don't open a browser window")
+    sp.add_argument("--no-hold", action="store_true", help="don't keep re-sending static looks")
+
+    sp = add("scene", cmd_scene, "play an ambient scene: kkleds scene fire (--list for all)")
+    sp.add_argument("name", nargs="?", help="scene id, e.g. fire, ocean, aurora")
+    sp.add_argument("--list", action="store_true")
+    sp.add_argument("--speed", type=float, default=1.0)
+    sp.add_argument("--brightness", default="high", help="low, medium, high or 0..1")
+    sp.add_argument("--duration", type=float, help="stop after this many seconds")
+    sp.add_argument("--keep", action="store_true", help="leave the last frame on when stopping")
 
     # device info / profiles
     add("list", cmd_list, "list connected NI HID interfaces and their profiles")
@@ -607,8 +656,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--white", default="white:0")
     sp.add_argument("--black", default="blue")
 
-    sp = add("preset", cmd_preset, "load a JSON preset (see presets/)")
-    sp.add_argument("file")
+    sp = add("preset", cmd_preset, "show a look: a built-in or saved name, or a JSON file (--list for all)")
+    sp.add_argument("file", nargs="?", help="look name (e.g. split-keyboard) or path to a JSON file")
+    sp.add_argument("--list", action="store_true")
 
     sp = add("animate", cmd_animate, "run an animated effect")
     sp.add_argument("effect", choices=sorted(EFFECTS))

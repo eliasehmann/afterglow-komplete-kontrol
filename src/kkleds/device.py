@@ -143,6 +143,23 @@ class HidDevice(_Base):
             pass
 
 
+class MemoryDevice(_Base):
+    """Accepts and validates writes but sends nothing (used by the UI's preview mode)."""
+
+    def __init__(self, profile: Profile):
+        self.profile = profile
+        self.info = {"product_string": f"{profile.name} (preview)"}
+
+    def write_keys(self, keys: Sequence[ColorValue]) -> None:
+        self.profile.keys_report(keys)
+
+    def write_buttons(self, values: Sequence[ColorValue]) -> None:
+        self.profile.buttons_report(values)
+
+    def write_report(self, data: bytes) -> None:
+        pass
+
+
 def _enable_ansi() -> None:
     if os.name != "nt":
         return

@@ -216,7 +216,9 @@ def test_scale_and_gradient():
 
 
 def test_presets_load():
-    for path in ROOT.glob("presets/*.json"):
+    paths = list(ROOT.glob("src/kkleds/presets/*.json"))
+    assert len(paths) >= 3
+    for path in paths:
         assert len(Frame.from_preset_file(S88, path).keys) == 88
         data = json.loads(path.read_text())
         if "buttons" in data:
@@ -272,8 +274,13 @@ def test_button_state_round_trip():
         ["buttons", "--list", "--model", "s88-mk2"],
         ["strip", "rainbow", "--dry-run"],
         ["strip", "green", "red", "--bar", "60", "--dry-run"],
-        ["preset", str(ROOT / "presets" / "split-keyboard.json"), "--dry-run"],
+        ["preset", "split-keyboard", "--dry-run"],
+        ["preset", str(ROOT / "src" / "kkleds" / "presets" / "sunset.json"), "--dry-run"],
+        ["preset", "--list"],
         ["raw", "81", "04", "08", "--dry-run"],
+        ["scene", "--list"],
+        ["scene", "storm", "--duration", "0.2", "--dry-run"],
+        ["scene", "aurora", "--duration", "0.1", "--brightness", "low", "--dry-run", "--model", "s88-mk1"],
         ["devices"],
         ["colors"],
         ["profile-check", str(ROOT / "src" / "kkleds" / "profiles" / "komplete-kontrol-s-mk2.json")],

@@ -4,24 +4,29 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kkleds"
-version = "0.2.0"
-description = "Customise the light guide and button LEDs of Native Instruments keyboards, driven by device profiles"
+version = "1.0.0"
+description = "Light up Native Instruments Komplete Kontrol keyboards: ambient scenes, your own looks and play-along lights"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = ["hidapi>=0.14"]
 
 [project.optional-dependencies]
 midi = ["mido>=1.3", "python-rtmidi>=1.5"]
+app = ["mido>=1.3", "python-rtmidi>=1.5", "pystray>=0.19", "Pillow>=10"]
+build = ["pyinstaller>=6"]
 dev = ["pytest>=7"]
 
 [project.scripts]
 kkleds = "kkleds.cli:main"
 
+[project.gui-scripts]
+kontrol-leds = "kkleds.app:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-kkleds = ["profiles/*.json"]
+kkleds = ["profiles/*.json", "presets/*.json", "web/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

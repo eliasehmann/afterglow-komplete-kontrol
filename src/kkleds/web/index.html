@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kontrol LEDs</title>
+<style>
+  :root {
+    --bg: #0c0d10; --surface: #15171c; --surface2: #1c1f26; --line: #262a33;
+    --text: #eceef2; --muted: #858c9a; --accent: #ff8a3d; --ok: #3ecf8e; --bad: #ff5b6e; --warn: #f5b742;
+    --radius: 14px; --hw: #1a1c21; --hwline: #2c3039; --hwtext: #9aa1ad;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 20px 48px; }
+
+  header { display: flex; align-items: center; gap: 14px; padding: 18px 0 8px; flex-wrap: wrap; }
+  .logo { font-weight: 700; letter-spacing: .3px; font-size: 18px; }
+  .status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+  .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+  .status.ok i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .status.bad i { background: var(--bad); } .status.dry i { background: var(--warn); }
+  .now { color: var(--text); font-size: 13px; }
+  .spacer { flex: 1; }
+  button { font: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--line); border-radius: 999px; padding: 7px 16px; cursor: pointer; }
+  button:hover { border-color: #3a404c; }
+  button.ghost { background: transparent; }
+  button.small { padding: 3px 10px; font-size: 12px; }
+  input[type=text] { font: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; width: 200px; }
+  input[type=color] { width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: none; cursor: pointer; }
+  .hint { color: var(--muted); font-size: 12px; }
+
+  /* ---------------------------------------------------------------- the keyboard drawing */
+  .stage { margin: 14px 0 22px; padding: 22px 22px 18px; background: linear-gradient(#17191e, #111216);
+           border: 1px solid var(--line); border-radius: 20px; overflow-x: auto; user-select: none; touch-action: pan-x; }
+  .stage.painting { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .stage.painting [data-i], .stage.painting [data-k], .stage.painting [data-slot] { cursor: crosshair; }
+  .panel, .bed { min-width: 1060px; }
+  /* top panel: the controls sit in the middle, like on the hardware */
+  .panel { display: flex; justify-content: center; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+  .pcol { display: flex; flex-direction: column; gap: 6px; }
+  .pcol.grow { flex: 0 0 330px; }
+  .pblock.gap { margin-top: 12px; }
+  .ptitle { font-size: 9px; color: #6c7380; letter-spacing: 1.2px; text-transform: uppercase; margin: 0 0 4px 2px; }
+  .prow { display: flex; gap: 5px; margin-bottom: 5px; }
+  .hw { min-width: 62px; height: 24px; padding: 0 6px; border-radius: 4px; background: var(--hw); border: 1px solid var(--hwline);
+        color: var(--hwtext); font: 600 8.5px/1 system-ui, sans-serif; letter-spacing: .4px; display: grid; place-items: center;
+        transition: background .08s, box-shadow .08s, color .08s; white-space: nowrap; }
+  .hw.dummy { opacity: .4; border-style: dashed; }
+  .size-square .hw { min-width: 0; width: 28px; font-size: 10px; }
+  .size-small .hw { min-width: 0; height: 15px; padding: 0 4px; font-size: 6.5px; }
+  .size-small .prow { gap: 3px; }
+  .display .prow { gap: 4px; }
+  .display .hw { flex: 1; min-width: 0; height: 11px; font-size: 0; border-radius: 3px; }
+  .screens { display: flex; gap: 10px; }
+  .screen { flex: 1; height: 82px; background: #060709; border: 1px solid #23262d; border-radius: 4px; }
+  .knobs { display: flex; justify-content: space-around; padding: 4px 6px 0; }
+  .knob { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #34373f, #15171b); border: 1px solid #30343c; }
+  .enc { position: relative; width: 84px; height: 84px; margin: 8px auto 0; }
+  .enc .core { position: absolute; inset: 18px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3a3d45, #15171b); border: 1px solid #3a3e47; }
+  .enc .hw { position: absolute; min-width: 0; padding: 0; border-radius: 4px; font-size: 0; }
+  .enc .up, .enc .down { left: 32px; width: 20px; height: 8px; } .enc .up { top: 3px; } .enc .down { bottom: 3px; }
+  .enc .left, .enc .right { top: 32px; width: 8px; height: 20px; } .enc .left { left: 3px; } .enc .right { right: 3px; }
+
+  /* bottom: wheel module on the left of the keys, like the hardware */
+  .bed { display: flex; gap: 12px; align-items: stretch; }
+  .side { flex: 0 0 118px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 10px;
+          padding: 10px 8px; background: #121318; border: 1px solid var(--line); border-radius: 8px; }
+  .wheels { display: flex; gap: 12px; }
+  .wheel { width: 24px; height: 62px; border-radius: 7px; border: 1px solid #30343c;
+           background: repeating-linear-gradient(#2a2d34 0 3px, #17191d 3px 6px); }
+  .hwstrip { display: flex; gap: 2px; height: 12px; width: 100%; padding: 3px; background: #0e0f12; border: 1px solid var(--hwline); border-radius: 6px; }
+  .hwstrip div { flex: 1; border-radius: 2px; background: #22252c; }
+  .keybed { flex: 1; min-width: 0; }
+  .leds { display: flex; gap: 2px; height: 10px; }
+  .leds div { flex: 1; border-radius: 5px; background: #22252c; }
+  .keys { display: flex; gap: 2px; height: 96px; margin-top: 6px; position: relative; }
+  .keys .w { flex: 1; border-radius: 0 0 4px 4px; background: linear-gradient(#f4f4f2, #d9d9d6); box-shadow: inset 0 -3px 0 #b9b9b5; }
+  .keys .b { position: absolute; top: 0; height: 62%; background: linear-gradient(#26272b, #070708); border-radius: 0 0 3px 3px; z-index: 1; }
+
+  /* ---------------------------------------------------------------- controls */
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 28px; margin: 0 0 26px; }
+  .ctl { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+  input[type=range] { width: 200px; accent-color: var(--accent); }
+  .seg { display: inline-flex; flex-wrap: wrap; background: var(--surface2); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+  .seg button { border: 0; background: transparent; padding: 5px 14px; color: var(--muted); }
+  .seg button.on { background: var(--accent); color: #1a0d03; font-weight: 600; }
+
+  /* ---------------------------------------------------------------- editors */
+  .editor { display: none; background: var(--surface); border: 1px solid var(--accent); border-radius: 16px; padding: 14px 18px 8px; margin: 0 0 26px; }
+  .editor.open { display: block; }
+  .editor .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 4px 0 12px; }
+  .editor .lbl { width: 70px; color: var(--muted); font-size: 13px; }
+  .editor .title { font-weight: 600; }
+  .cols { display: flex; flex-wrap: wrap; gap: 8px; }
+  .col { width: 34px; height: 34px; border-radius: 10px; border: 2px solid #0008; padding: 0; position: relative; }
+  .col:hover::after { content: "×"; position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 18px; text-shadow: 0 0 4px #000; }
+  .col.big { width: 44px; height: 44px; cursor: default; } .col.big:hover::after { content: none; }
+  .pal { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .pal button { width: 24px; height: 24px; border-radius: 6px; padding: 0; border: 1px solid #0008; }
+  .pal button.word { width: auto; padding: 0 10px; border-radius: 999px; border-color: var(--line); font-size: 12px; }
+  .pgrid { display: grid; grid-template-columns: repeat(17, 20px); gap: 3px; }
+  .pgrid button { width: 20px; height: 20px; padding: 0; border-radius: 5px; border: 1px solid #0008; }
+  .pgrid button.sel, .pal button.sel { outline: 2px solid #fff; outline-offset: 1px; }
+
+  /* ---------------------------------------------------------------- tiles */
+  h2 { font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin: 6px 0 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin-bottom: 30px; }
+  .tile { position: relative; text-align: left; padding: 0; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); overflow: hidden; cursor: pointer; transition: transform .12s, border-color .12s; }
+  .tile:hover { transform: translateY(-2px); border-color: #3a404c; }
+  .tile.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 8px 30px -12px var(--accent); }
+  /* tile preview: a little row of LEDs, rendered by the real scene code */
+  .sw { height: 64px; display: flex; align-items: center; gap: 2px; padding: 0 12px; background: #0e0f13; }
+  .sw i { flex: 1; height: 14px; border-radius: 4px; background: #22252c; }
+  .tile.add .sw { display: grid; place-items: center; font-size: 30px; color: var(--muted);
+                  background: repeating-linear-gradient(45deg, #1a1c22, #1a1c22 8px, #1f2229 8px, #1f2229 16px); }
+  .tile .txt { padding: 10px 12px 12px; }
+  .tile b { display: block; font-size: 14px; }
+  .tile span { color: var(--muted); font-size: 12px; }
+  .tile .playing { display: none; color: var(--accent); font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; margin-top: 4px; }
+  .tile.on .playing { display: block; }
+  .tile .acts { position: absolute; top: 6px; right: 6px; display: none; gap: 4px; }
+  .tile:hover .acts { display: flex; }
+  .tile .acts button { padding: 2px 8px; font-size: 12px; background: #000a; border-color: #0000; }
+  @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
+
+  select { font: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; }
+  .switch { display: flex; align-items: center; gap: 9px; padding: 6px 14px 6px 8px; }
+  .switch .tg { width: 32px; height: 18px; border-radius: 999px; background: #2a2e36; position: relative; transition: background .15s; }
+  .switch .tg::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #8b93a3; transition: left .15s, background .15s; }
+  .switch.on { border-color: var(--accent); }
+  .switch.on .tg { background: var(--accent); }
+  .switch.on .tg::after { left: 16px; background: #fff; }
+  .banner { display: none; margin: 8px 0 0; padding: 12px 16px; border-radius: 12px; background: #2a1a12; border: 1px solid #6b3a1f; color: #ffd8bc; font-size: 14px; }
+  footer { margin-top: 6px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  footer ul { margin: 6px 0 12px; padding-left: 18px; }
+  footer li { margin: 3px 0; }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--bad); color: #fff; padding: 9px 16px; border-radius: 10px; display: none; max-width: 90vw; z-index: 5; }
+  #toast.good { background: #2c6e4f; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="logo">Kontrol LEDs</span>
+    <span class="status" id="status"><i></i><span id="statusText">…</span><button class="small ghost" id="reconnect" hidden>Reconnect</button></span>
+    <span class="now" id="now"></span>
+    <span class="spacer"></span>
+    <button class="switch" id="playBtn" title="Light up the keys you press, on top of any scene or look"><span class="tg"></span>Light up what I play</button>
+    <button id="off">Turn off</button>
+  </header>
+  <div class="banner" id="banner"></div>
+
+  <section class="stage" id="stage">
+    <div class="panel" id="panel"></div>
+    <div class="bed">
+      <div class="side" id="side"></div>
+      <div class="keybed"><div class="leds" id="leds"></div><div class="keys" id="keys"></div></div>
+    </div>
+  </section>
+
+  <div class="controls">
+    <label class="ctl">Speed <input type="range" id="speed" min="0.2" max="3" step="0.1" value="1"></label>
+    <span class="ctl">Brightness <span class="seg" id="bright"></span></span>
+  </div>
+
+  <section class="editor" id="editor">
+    <div class="row"><span class="title" id="edTitle">Custom scene</span><span class="spacer"></span><button class="small ghost" id="edClose">Close</button></div>
+    <div class="row"><span class="lbl">Colours</span><div class="cols" id="edColours"></div><span class="hint">click one to remove it</span></div>
+    <div class="row"><span class="lbl">Add</span><div class="pal" id="edPal"></div><input type="color" id="edRgb" value="#ff8800" title="Any colour"></div>
+    <div class="row"><span class="lbl">Motion</span><span class="seg" id="edMotion"></span></div>
+    <div class="row"><span class="lbl">Save as</span><input type="text" id="edName" placeholder="My scene" maxlength="60"><button id="edSave">Save</button></div>
+  </section>
+
+  <section class="editor" id="painter">
+    <div class="row"><span class="title">Paint your own look</span><span class="hint">Click or drag on the keys, the touch strip and the buttons above.</span><span class="spacer"></span><button class="small ghost" id="pClose">Close</button></div>
+    <div class="row"><span class="lbl">Brush</span><div class="col big" id="pBrush"></div><div class="pgrid" id="pPal"></div>
+      <div class="pal"><button class="word" id="pOff">Off</button><input type="color" id="pRgb" value="#ff8800" title="Any colour"></div></div>
+    <div class="row"><span class="lbl"></span><span class="hint">Rows: bright, medium, dim, pastel.<br>
+      Some buttons only have a white light: they take just the brightness (hover a button to see which).</span></div>
+    <div class="row"><span class="lbl">Keys</span><button data-fill="all">Fill all</button><button data-fill="white">White keys</button><button data-fill="black">Black keys</button><button data-fill="clear">Clear</button></div>
+    <div class="row" id="pBtnRow"><span class="lbl">Panel</span><button id="pStripFill">Fill strip</button><button id="pStripClear">Clear strip</button><button id="pBtnAll">All buttons</button><button id="pBtnClear">Clear buttons</button></div>
+    <div class="row"><span class="lbl">Save as</span><input type="text" id="pName" placeholder="My look" maxlength="60"><button id="pSave">Save</button></div>
+  </section>
+
+  <section class="editor" id="scaler">
+    <div class="row"><span class="title">Scale guide</span><span class="hint">The notes of the scale light up, the root notes in red.</span><span class="spacer"></span><button class="small ghost" id="sClose">Close</button></div>
+    <div class="row"><span class="lbl">Key</span><select id="sRoot"></select><span class="lbl" style="width:auto">Scale</span><select id="sKind"></select></div>
+  </section>
+
+  <h2>Scenes</h2>
+  <div class="grid" id="scenes"></div>
+
+  <h2 id="mineTitle">Your scenes</h2>
+  <div class="grid" id="mine"></div>
+
+  <h2 id="looksTitle">Looks</h2>
+  <div class="grid" id="looks"></div>
+
+  <footer>
+    <b>Tips</b>
+    <ul>
+      <li>Colours flicker or get replaced? Close the Komplete Kontrol app and your music software's keyboard integration: they control the lights too.</li>
+      <li>Using the Kontrol LEDs app? It keeps running in the system tray, next to the clock. Right-click its icon to start it with Windows or to quit.</li>
+      <li>Your last look comes back automatically the next time you start.</li>
+    </ul>
+    <span id="version"></span>
+  </footer>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const OFF = "#22252c";
+const MOTION_LABEL = { still: "Still", flow: "Flow", waves: "Waves", pulse: "Pulse", flicker: "Flicker", twinkle: "Twinkle" };
+let info = null, state = null, speed = 1, brightness = "high";
+let custom = { colors: ["red", "orange", "fuchsia"], motion: "flow", name: null };
+const hexMap = {};
+
+function toast(msg, good) {
+  const t = $("#toast"); t.textContent = msg; t.className = good ? "good" : ""; t.style.display = "block";
+  clearTimeout(toast.t); toast.t = setTimeout(() => (t.style.display = "none"), good ? 2500 : 5000);
+}
+async function post(path, body) {
+  try {
+    const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json", "X-KKLeds": "1" }, body: JSON.stringify(body || {}) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || r.statusText);
+    if (j.state) render(j.state);
+    return j;
+  } catch (e) { toast(e.message); return null; }
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const lit = h => h && h !== "#000000";
+const hexOf = spec => (spec === "off" ? "#000000" : String(spec).startsWith("#") ? spec : hexMap[spec] || "#888888");
+function el(tag, cls, attrs) { const e = document.createElement(tag); if (cls) e.className = cls; if (attrs) Object.assign(e.dataset, attrs); return e; }
+
+function paint(node, hex) {  // LED dots and strip segments
+  node.style.background = lit(hex) ? hex : OFF;
+  node.style.boxShadow = lit(hex) ? `0 0 10px ${hex}, 0 0 2px ${hex}` : "none";
+}
+function paintButton(node, hex) {  // panel buttons: lit like the real backlight
+  if (lit(hex)) {
+    const n = parseInt(hex.slice(1), 16), lum = (0.3 * (n >> 16) + 0.59 * (n >> 8 & 255) + 0.11 * (n & 255)) / 255;
+    node.style.background = hex; node.style.borderColor = hex;
+    node.style.boxShadow = `0 0 12px ${hex}99`; node.style.color = lum > 0.45 ? "#111" : "#eee";
+  } else {
+    node.style.background = node.style.borderColor = node.style.boxShadow = node.style.color = "";
+  }
+}
+
+// ------------------------------------------------------------------ building the drawing
+function buildStage() {
+  const leds = $("#leds"), keys = $("#keys");
+  leds.innerHTML = keys.innerHTML = "";
+  const k = info.keys;
+  if (k) {
+    k.black.forEach((_b, i) => { const d = el("div", "", { i }); d.title = k.names[i]; leds.appendChild(d); });
+    const whites = k.black.filter(b => !b).length, w = 100 / whites;
+    let wi = 0;
+    k.black.forEach((isBlack, i) => {
+      const d = el("div", isBlack ? "b" : "w", { i }); d.title = k.names[i];
+      if (isBlack) { d.style.left = `calc(${wi * w}% - ${w * 0.3}%)`; d.style.width = `${w * 0.6}%`; } else wi++;
+      keys.appendChild(d);
+    });
+  }
+  buildPanel();
+}
+
+function hwButton(item) {
+  const b = el("div", "hw" + (item.slot === null ? " dummy" : ""));
+  b.textContent = item.label;
+  if (item.slot === null) b.title = `${item.label}: lit by the keyboard itself`;
+  else {
+    b.dataset.slot = item.slot; b.dataset.name = item.name; b.dataset.kind = item.kind;
+    b.title = item.kind === "single colour" ? `${item.label}: white light only (brightness)` : `${item.label}: any colour`;
+  }
+  return b;
+}
+// What a white-only LED shows for a brush: white at the brush's brightness.
+function whiteFor(spec) {
+  const hex = hexOf(spec);
+  if (!lit(hex)) return "#000000";
+  const m = /:(\d|pastel)$/.exec(spec);
+  let level;
+  if (m) level = m[1] === "pastel" ? 2 : Math.min(2, +m[1]);
+  else {
+    const n = parseInt(hex.slice(1), 16), v = Math.max(n >> 16, n >> 8 & 255, n & 255) / 255;
+    level = Math.round(v * 3) - 1;
+    if (level < 0) return "#000000";
+    level = Math.min(2, level);
+  }
+  return hexMap["white:" + level] || "#ffffff";
+}
+function renderBlock(block) {
+  const b = info.buttons;
+  const wrap = el("div", "pblock" + (block.display ? " display" : "") + (block.gap ? " gap" : "") + (block.size ? " size-" + block.size : ""));
+  if (block.title) wrap.appendChild(Object.assign(el("div", "ptitle"), { textContent: block.title }));
+  const many = (cls, n) => { const s = el("div", cls + "s"); for (let i = 0; i < n; i++) s.appendChild(el("div", cls)); return s; };
+  if (block.type === "buttons") {
+    block.rows.forEach(r => { const row = el("div", "prow"); r.forEach(it => row.appendChild(hwButton(it))); wrap.appendChild(row); });
+  } else if (block.type === "strip") {
+    if (!b.strip.length) return null;
+    const s = el("div", "hwstrip");
+    b.strip.forEach((_slot, n) => s.appendChild(el("div", "", { k: n })));
+    wrap.style.width = "100%"; wrap.appendChild(s);
+  } else if (block.type === "screens") wrap.appendChild(many("screen", block.count || 1));
+  else if (block.type === "knobs") wrap.appendChild(many("knob", block.count || 8));
+  else if (block.type === "wheels") wrap.appendChild(many("wheel", block.count || 2));
+  else if (block.type === "encoder") {
+    const e = el("div", "enc"); e.appendChild(el("div", "core"));
+    ["up", "down", "left", "right"].forEach(d => { if (block[d]) { const h = hwButton(block[d]); h.classList.add(d); e.appendChild(h); } });
+    wrap.appendChild(e);
+  }
+  return wrap;
+}
+function buildPanel() {
+  const box = $("#panel"), side = $("#side");
+  box.innerHTML = side.innerHTML = "";
+  const p = info.panel, b = info.buttons;
+  box.style.display = b ? "" : "none";
+  side.style.display = p && p.side.length ? "" : "none";
+  if (!b) return;
+  if (!p) {  // no drawing in the profile: plain button rows
+    const col = el("div", "pcol"), row = el("div", "prow");
+    row.style.flexWrap = "wrap";
+    b.leds.forEach(l => row.appendChild(hwButton({ ...l, label: l.name.replace(/_/g, " ").toUpperCase() })));
+    col.appendChild(row);
+    const strip = renderBlock({ type: "strip", title: "Touch strip" });
+    if (strip) col.appendChild(strip);
+    box.appendChild(col);
+    return;
+  }
+  p.columns.forEach(column => {
+    const col = el("div", "pcol" + (column.some(x => x.type === "screens") ? " grow" : ""));
+    column.forEach(block => { const node = renderBlock(block); if (node) col.appendChild(node); });
+    box.appendChild(col);
+  });
+  p.side.forEach(block => { const node = renderBlock(block); if (node) side.appendChild(node); });
+}
+
+// ------------------------------------------------------------------ tiles
+const PREVIEW_LEDS = 28;
+function setLeds(sw, hexes) {
+  [...sw.children].forEach((d, i) => {
+    const h = hexes[i];
+    d.style.background = lit(h) ? h : "";
+    d.style.boxShadow = lit(h) ? `0 0 6px ${h}` : "";
+  });
+}
+// swatch: an array of colours (static look) or a string key into /api/previews (live scene)
+function tile(name, desc, swatch, onClick, actions) {
+  const b = el("div", "tile"); b.tabIndex = 0; b.setAttribute("role", "button");
+  b.innerHTML = `<div class="sw"></div>
+                 <div class="txt"><b>${esc(name)}</b><span>${esc(desc)}</span><div class="playing">● Playing</div></div>`;
+  const sw = b.querySelector(".sw");
+  if (swatch) {
+    for (let i = 0; i < PREVIEW_LEDS; i++) sw.appendChild(document.createElement("i"));
+    if (Array.isArray(swatch)) setLeds(sw, swatch); else sw.dataset.pv = swatch;
+  }
+  b.onclick = onClick;
+  b.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } };
+  if (actions) {
+    const box = el("div", "acts");
+    actions.forEach(([label, title, fn]) => {
+      const a = document.createElement("button"); a.textContent = label; a.title = title;
+      a.onclick = e => { e.stopPropagation(); fn(); };
+      box.appendChild(a);
+    });
+    b.appendChild(box);
+  }
+  return b;
+}
+
+function buildTiles() {
+  const sc = $("#scenes"); sc.innerHTML = "";
+  const add = tile("Custom", "Your colours, your motion", null, () => openEditor(null));
+  add.classList.add("add"); add.dataset.custom = ""; add.querySelector(".sw").textContent = "+";
+  sc.appendChild(add);
+  info.scenes.forEach(s => { const t = tile(s.name, s.description, s.id, () => playScene(s.id)); t.dataset.scene = s.id; sc.appendChild(t); });
+
+  const mine = $("#mine"); mine.innerHTML = "";
+  $("#mineTitle").style.display = mine.style.display = info.custom_scenes.length ? "" : "none";
+  info.custom_scenes.forEach(c => {
+    const t = tile(c.name, MOTION_LABEL[c.motion] || c.motion, "custom:" + c.name, () => playSaved(c), [
+      ["Edit", "Edit this scene", () => openEditor(c)],
+      ["×", "Delete", async () => { if (confirm(`Delete “${c.name}”?`) && await post("/api/scenes/delete", { name: c.name })) loadInfo(); }],
+    ]);
+    t.dataset.custom = c.name; mine.appendChild(t);
+  });
+
+  const lk = $("#looks"); lk.innerHTML = "";
+  if (info.keys) {
+    const pt = tile("Paint your own", "Every key, the strip and buttons", null, () => openPainter());
+    pt.classList.add("add"); pt.dataset.paint = ""; pt.querySelector(".sw").textContent = "✎";
+    lk.appendChild(pt);
+    const sg = tile("Scale guide", "Light up the notes of a scale", null, () => openScaler());
+    sg.classList.add("add"); sg.dataset.scaleTile = ""; sg.querySelector(".sw").textContent = "♪";
+    lk.appendChild(sg);
+  }
+  info.presets.forEach(p => {
+    const load = () => { closeAll(); post("/api/mode", { mode: "preset", name: p.name }); };
+    const actions = p.source !== "saved" ? null : [
+      ["Edit", "Edit this look", async () => { if (await post("/api/mode", { mode: "preset", name: p.name })) openPainter(p.name); }],
+      ["×", "Delete", async () => { if (confirm(`Delete “${p.title}”?`) && await post("/api/presets/delete", { name: p.name })) loadInfo(); }],
+    ];
+    const t = tile(p.title, p.source === "saved" ? "Your look" : "Static look", p.swatch, load, actions);
+    t.dataset.preset = p.name; lk.appendChild(t);
+  });
+  $("#looksTitle").style.display = lk.children.length ? "" : "none";
+
+  const seg = $("#bright"); seg.innerHTML = "";
+  info.brightness.forEach(level => {
+    const b = document.createElement("button"); b.textContent = level[0].toUpperCase() + level.slice(1); b.dataset.level = level;
+    b.onclick = () => { brightness = level; markBrightness(); retune(); };
+    seg.appendChild(b);
+  });
+  markBrightness();
+}
+function markBrightness() { $$("#bright button").forEach(b => b.classList.toggle("on", b.dataset.level === brightness)); }
+
+// ------------------------------------------------------------------ custom scene editor
+function buildEditor() {
+  info.custom_palette.forEach(p => (hexMap[p.spec] = p.hex));
+  const pal = $("#edPal"); pal.innerHTML = "";
+  info.custom_palette.forEach(p => {
+    const b = document.createElement("button"); b.style.background = p.hex; b.title = p.spec.replace("_", " ");
+    b.onclick = () => addColour(p.spec);
+    pal.appendChild(b);
+  });
+  const seg = $("#edMotion"); seg.innerHTML = "";
+  info.motions.forEach(m => {
+    const b = document.createElement("button"); b.textContent = MOTION_LABEL[m] || m; b.dataset.motion = m;
+    b.onclick = () => { custom.motion = m; renderEditor(); playCustom(); };
+    seg.appendChild(b);
+  });
+}
+function renderEditor() {
+  $("#edTitle").textContent = custom.name ? `Editing “${custom.name}”` : "Custom scene";
+  const box = $("#edColours"); box.innerHTML = "";
+  custom.colors.forEach((c, i) => {
+    const b = el("button", "col"); b.style.background = hexOf(c); b.title = "Remove";
+    b.onclick = () => { if (custom.colors.length > 1) { custom.colors.splice(i, 1); renderEditor(); playCustom(); } };
+    box.appendChild(b);
+  });
+  $$("#edMotion button").forEach(b => b.classList.toggle("on", b.dataset.motion === custom.motion));
+}
+function addColour(spec) {
+  if (custom.colors.length >= 8) return toast("Up to 8 colours");
+  custom.colors.push(spec); renderEditor(); playCustom();
+}
+function openEditor(saved) {
+  closeAll();
+  if (saved) custom = { colors: saved.colors.slice(), motion: saved.motion, name: saved.name };
+  $("#edName").value = custom.name || "";
+  $("#editor").classList.add("open");
+  renderEditor(); playCustom();
+  $("#editor").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function playCustom() {
+  return post("/api/mode", { mode: "scene", scene: "custom", colors: custom.colors, motion: custom.motion, name: custom.name, speed, brightness });
+}
+function playSaved(c) { closeAll(); custom = { colors: c.colors.slice(), motion: c.motion, name: c.name }; renderEditor(); playCustom(); }
+
+// ------------------------------------------------------------------ paint your own look
+let brush = "red:2", paintKeys = [], lastLocal = 0, keyTimer = null, pending = {}, btnTimer = null;
+let dragging = false, lastHit = null;
+const painterOpen = () => $("#painter").classList.contains("open");
+const SEND_EVERY = 35;  // ms between updates while painting
+
+function buildPainter() {
+  info.palette.forEach(h => h.levels.forEach(l => (hexMap[l.spec] = l.hex)));
+  const g = $("#pPal"); g.innerHTML = "";
+  for (let row = 0; row < 4; row++) {
+    info.palette.forEach(h => {
+      const l = h.levels[row], b = document.createElement("button");
+      b.style.background = l.hex; b.title = l.spec.replace("_", " "); b.dataset.spec = l.spec;
+      b.onclick = () => setBrush(l.spec);
+      g.appendChild(b);
+    });
+  }
+  $("#pBtnRow").style.display = info.buttons ? "" : "none";
+  setBrush(brush);
+}
+function setBrush(spec) {
+  brush = spec;
+  $("#pBrush").style.background = lit(hexOf(spec)) ? hexOf(spec) : OFF;
+  $$("#pPal button").forEach(b => b.classList.toggle("sel", b.dataset.spec === spec));
+  $("#pOff").classList.toggle("sel", spec === "off");
+}
+function openPainter(name) {
+  closeAll();
+  $("#painter").classList.add("open");
+  $("#stage").classList.add("painting");
+  $("#pName").value = name || "";
+  paintKeys = state ? state.keys.slice() : [];
+  sendKeys();  // switch to your painting (stops any scene)
+  $("#stage").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function closePainter() { $("#painter").classList.remove("open"); $("#stage").classList.remove("painting"); }
+
+function sendKeys() { clearTimeout(keyTimer); keyTimer = null; return post("/api/mode", { mode: "custom", keys: paintKeys }); }
+function assign(map, now) {
+  Object.assign(pending, map);
+  if (now) flushButtons(); else if (!btnTimer) btnTimer = setTimeout(flushButtons, SEND_EVERY);
+}
+function flushButtons() {
+  clearTimeout(btnTimer); btnTimer = null;
+  if (!Object.keys(pending).length) return null;
+  const map = pending; pending = {};
+  return post("/api/buttons", { assign: map });
+}
+function paintKey(i) {
+  if (paintKeys[i] === brush) return;
+  paintKeys[i] = brush; lastLocal = Date.now();
+  const led = $$("#leds div")[i]; if (led) paint(led, hexOf(brush));
+  if (!keyTimer) keyTimer = setTimeout(sendKeys, SEND_EVERY);
+}
+function paintStrip(n) {
+  lastLocal = Date.now();
+  const dot = $$(".hwstrip div")[n]; if (dot) paint(dot, hexOf(brush));
+  assign({ ["strip_" + (n + 1)]: brush });
+}
+function paintSlot(slot) {
+  lastLocal = Date.now();
+  $$(`#stage .hw[data-slot="${slot}"]`).forEach(b =>
+    paintButton(b, b.dataset.kind === "single colour" ? whiteFor(brush) : hexOf(brush)));
+  assign({ [String(slot)]: brush });
+}
+function fillKeys(which) {
+  const black = info.keys.black;
+  paintKeys = paintKeys.map((v, i) => which === "clear" ? "off" : which === "all" || (which === "black") === black[i] ? brush : v);
+  lastLocal = Date.now();
+  $$("#leds div").forEach((d, i) => paint(d, hexOf(paintKeys[i])));
+  sendKeys();
+}
+
+function hitAt(x, y) {
+  const node = document.elementFromPoint(x, y);
+  if (!node || !node.closest("#stage")) return null;
+  const d = node.dataset;
+  if (d.i !== undefined) return { kind: "key", n: +d.i };
+  if (d.k !== undefined) return { kind: "strip", n: +d.k };
+  if (d.slot !== undefined) return { kind: "slot", n: +d.slot };
+  return null;
+}
+function paintHit(h) {
+  if (!h) return;
+  const same = lastHit && lastHit.kind === h.kind;
+  if (same && lastHit.n === h.n) return;  // still on the same key / dot / button
+  // fast drags skip keys between two pointer events: fill in everything in between
+  if (same && h.kind !== "slot") {
+    const lo = Math.min(lastHit.n, h.n), hi = Math.max(lastHit.n, h.n);
+    for (let n = lo + 1; n < hi; n++) (h.kind === "key" ? paintKey : paintStrip)(n);
+  }
+  if (h.kind === "key") paintKey(h.n); else if (h.kind === "strip") paintStrip(h.n); else paintSlot(h.n);
+  lastHit = h;
+}
+
+// ------------------------------------------------------------------ scale guide
+const SCALE_LABEL = {
+  major: "Major", minor: "Minor", major_pentatonic: "Pentatonic (major)", minor_pentatonic: "Pentatonic (minor)",
+  blues: "Blues", harmonic_minor: "Harmonic minor", melodic_minor: "Melodic minor", dorian: "Dorian",
+  phrygian: "Phrygian", lydian: "Lydian", mixolydian: "Mixolydian", locrian: "Locrian", whole_tone: "Whole tone",
+};
+function buildScaler() {
+  $("#sRoot").innerHTML = info.roots.map(r => `<option>${r}</option>`).join("");
+  $("#sKind").innerHTML = Object.keys(SCALE_LABEL).filter(s => info.scales.includes(s))
+    .map(s => `<option value="${s}">${SCALE_LABEL[s]}</option>`).join("");
+}
+function applyScale() {
+  return post("/api/mode", { mode: "scale", root: $("#sRoot").value, scale: $("#sKind").value,
+                             color: "white:1", root_color: "red:2" });
+}
+function openScaler() {
+  closeAll();
+  if (state && state.mode.mode === "scale") { $("#sRoot").value = state.mode.root; $("#sKind").value = state.mode.scale; }
+  $("#scaler").classList.add("open");
+  applyScale();
+}
+function closeAll() { closePainter(); $("#editor").classList.remove("open"); $("#scaler").classList.remove("open"); }
+
+// ------------------------------------------------------------------ live tile previews
+async function pollPreviews() {
+  if (!document.hidden) {
+    try {
+      const pv = await (await fetch("/api/previews")).json();
+      $$(".sw[data-pv]").forEach(sw => { if (pv[sw.dataset.pv]) setLeds(sw, pv[sw.dataset.pv]); });
+    } catch (e) { /* server stopped: the status line says so */ }
+  }
+  setTimeout(pollPreviews, 90);
+}
+
+// ------------------------------------------------------------------ playing
+function playScene(id) { closeAll(); return post("/api/mode", { mode: "scene", scene: id, speed, brightness }); }
+function retune() {
+  if (!state || state.mode.mode !== "scene") return;
+  if (state.mode.scene === "custom") playCustom(); else playScene(state.mode.scene);
+}
+
+function render(st) {
+  state = st;
+  const s = $("#status");
+  if (st.error && !st.connected) { s.className = "status bad"; $("#statusText").textContent = "Keyboard not connected"; }
+  else if (st.dry_run) { s.className = "status dry"; $("#statusText").textContent = `${info ? info.profile.name : ""} · preview only`; }
+  else { s.className = "status ok"; $("#statusText").textContent = info ? info.profile.name : "Connected"; }
+  $("#reconnect").hidden = st.connected;
+  const banner = $("#banner");
+  if (!st.connected && !st.dry_run) {
+    banner.textContent = "Can't find your keyboard. Plug it in and switch it on: it connects by itself. " +
+      "If it's already on, close the Komplete Kontrol app for a moment and it will connect.";
+    banner.style.display = "block";
+  } else if (st.play.error) {
+    banner.textContent = "“Light up what I play” can't hear the keyboard: " + st.play.error;
+    banner.style.display = "block";
+  } else banner.style.display = "none";
+  $("#playBtn").classList.toggle("on", st.play.enabled);
+
+  if (Date.now() - lastLocal > 600) {  // don't overwrite strokes that are still on their way
+    const leds = $$("#leds div");
+    st.keys.forEach((h, i) => leds[i] && paint(leds[i], h));
+    if (info && info.buttons) {
+      const dots = $$(".hwstrip div");
+      info.buttons.strip.forEach((slot, n) => dots[n] && paint(dots[n], st.buttons[slot]));
+      $$("#stage .hw[data-slot]").forEach(b => paintButton(b, st.buttons[+b.dataset.slot]));
+    }
+  }
+
+  const m = st.mode, isCustom = m.mode === "scene" && m.scene === "custom";
+  $$("#scenes .tile").forEach(t => t.classList.toggle("on",
+    t.dataset.scene ? m.mode === "scene" && t.dataset.scene === m.scene : isCustom && !m.name));
+  $$("#mine .tile").forEach(t => t.classList.toggle("on", isCustom && t.dataset.custom === m.name));
+  $$("#looks .tile[data-preset]").forEach(t => t.classList.toggle("on", m.mode === "preset" && t.dataset.preset === m.name));
+  $$("#looks .tile[data-paint]").forEach(t => t.classList.toggle("on", m.mode === "custom"));
+  $$("#looks .tile[data-scale-tile]").forEach(t => t.classList.toggle("on", m.mode === "scale"));
+  let now = "";
+  if (isCustom) now = m.name || "Custom scene";
+  else if (m.mode === "scene") { const sc = info && info.scenes.find(x => x.id === m.scene); now = sc ? sc.name : m.scene; }
+  else if (m.mode === "preset") now = m.name;
+  else if (m.mode === "custom") now = "Your painting";
+  else if (m.mode === "scale") now = `${m.root} ${SCALE_LABEL[m.scale] || m.scale} scale`;
+  else if (m.mode !== "off") now = m.mode;
+  $("#now").textContent = now ? "· " + now : "";
+}
+
+async function loadInfo() {
+  info = await (await fetch("/api/info")).json();
+  buildStage(); buildTiles(); buildEditor(); renderEditor(); buildPainter(); buildScaler();
+  $("#version").textContent = `Kontrol LEDs ${info.version}`;
+  if (state) render(state);
+}
+
+async function poll() {
+  try { render(await (await fetch("/api/state")).json()); }
+  catch (e) { $("#status").className = "status bad"; $("#statusText").textContent = "kkleds UI stopped"; }
+  setTimeout(poll, 120);
+}
+
+// ------------------------------------------------------------------ wiring
+let speedT = null;
+$("#speed").oninput = e => { speed = +e.target.value; clearTimeout(speedT); speedT = setTimeout(retune, 120); };
+$("#off").onclick = () => post("/api/off");
+$("#reconnect").onclick = async () => { await post("/api/connect", {}); loadInfo(); };
+$("#edClose").onclick = () => $("#editor").classList.remove("open");
+$("#edRgb").onchange = e => addColour(e.target.value);
+$("#edSave").onclick = async () => {
+  const name = $("#edName").value.trim();
+  if (!name) return toast("Give your scene a name");
+  if (await post("/api/scenes/save", { name, colors: custom.colors, motion: custom.motion })) {
+    custom.name = name; toast(`Saved “${name}”`, true); await loadInfo(); playCustom();
+  }
+};
+
+$("#stage").addEventListener("pointerdown", e => {
+  const h = hitAt(e.clientX, e.clientY);
+  if (!h) return;
+  if (!painterOpen()) { toast("Open “Paint your own” under Looks to change colours here"); return; }
+  dragging = true; lastHit = null; paintHit(h); e.preventDefault();
+});
+window.addEventListener("pointermove", e => { if (dragging) paintHit(hitAt(e.clientX, e.clientY)); });
+window.addEventListener("pointerup", () => {
+  if (!dragging) return;
+  dragging = false; lastHit = null;
+  if (keyTimer) sendKeys();
+  flushButtons();
+});
+$("#pClose").onclick = closePainter;
+$("#sClose").onclick = () => $("#scaler").classList.remove("open");
+$("#sRoot").onchange = applyScale;
+$("#sKind").onchange = applyScale;
+$("#playBtn").onclick = () => post("/api/play", { enabled: !(state && state.play.enabled) });
+$("#pOff").onclick = () => setBrush("off");
+$("#pRgb").onchange = e => setBrush(e.target.value);
+$$("[data-fill]").forEach(b => (b.onclick = () => fillKeys(b.dataset.fill)));
+$("#pStripFill").onclick = () => assign({ strip: brush }, true);
+$("#pStripClear").onclick = () => assign({ strip: "off" }, true);
+$("#pBtnAll").onclick = () => assign({ all: brush }, true);
+$("#pBtnClear").onclick = () => assign({ all: "off" }, true);
+$("#pSave").onclick = async () => {
+  const name = $("#pName").value.trim();
+  if (!name) return toast("Give your look a name");
+  if (keyTimer) await sendKeys();
+  await flushButtons();
+  if (await post("/api/presets/save", { name })) { toast(`Saved “${name}”`, true); loadInfo(); }
+};
+
+(async () => {
+  try {
+    await loadInfo();
+    const st = await (await fetch("/api/state")).json();
+    if (st.mode.mode === "scene") {
+      speed = st.mode.speed || 1; brightness = st.mode.brightness || "high";
+      $("#speed").value = speed; markBrightness();
+      if (st.mode.scene === "custom") custom = { colors: st.mode.colors, motion: st.mode.motion, name: st.mode.name };
+      renderEditor();
+    }
+    render(st);
+  } catch (e) {
+    toast("Problem starting the page: " + e.message);
+  }
+  poll();  // keep updating even if something above failed
+  pollPreviews();
+})();
+</script>
+</body>
+</html>

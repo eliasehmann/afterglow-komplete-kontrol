@@ -1,155 +1,151 @@
-# kontrol-leds
+# Kontrol LEDs
 
-Set your own colours on the LEDs of **Native Instruments keyboards**: the light
-guide above each key, the button lights and the touch strip. It talks to the
-keyboard directly over USB HID, so it works without Komplete Kontrol or a DAW.
+Make your **Native Instruments Komplete Kontrol** keyboard glow: ambient scenes
+like fire, ocean and aurora, your own colours on every key, a scale guide for
+practising, and keys that light up as you play.
 
-Device support comes from **profiles**, which are JSON files describing each
-product. To add a keyboard, or a new version of one, you write a profile, not
-code. See [docs/adding-a-device.md](docs/adding-a-device.md).
+![Kontrol LEDs](docs/screenshot.png)
 
-## Supported devices
+> Kontrol LEDs is a free hobby project. It is not made by or affiliated with
+> Native Instruments.
 
-| Model (`--model`) | Device | Status |
-|---|---|---|
-| `s88-mk2` | Komplete Kontrol S88 MK2 | **verified**: keys, 42 buttons, 25-dot touch strip |
-| `s49-mk2`, `s61-mk2` | Komplete Kontrol S49 / S61 MK2 | unverified (same profile as the S88) |
-| `s25-mk1` … `s88-mk1` | Komplete Kontrol S-Series MK1 | unverified: RGB light guide only |
+## Get started
 
-Run `kkleds devices` for the live list. The keyboard is detected automatically
-when it's plugged in. Use `--model` to pick a profile yourself.
+You don't need any technical knowledge.
 
-## Setup
+1. **Download** `KontrolLEDs.exe` from the
+   [latest release](https://github.com/eliasehmann/kontrol-leds/releases/latest).
+2. **Plug in** your keyboard and switch it on.
+3. **Double-click** `KontrolLEDs.exe`. The app opens in your web browser.
+   - If Windows says *"Windows protected your PC"*, click **More info →
+     Run anyway**. This appears because the app isn't signed by a big company,
+     not because something is wrong.
+4. **Pick a scene.** That's it.
+
+The app keeps running in the **system tray**, the little icons next to the
+clock. Right-click its keyboard icon to:
+
+- **Open** the app again,
+- **Turn lights off**,
+- tick **Start with Windows**, so your lights come back every time you turn on
+  your PC,
+- **Quit**. This also turns the lights off.
+
+Your last look is remembered, so the next start picks up where you left off.
+
+## What you can do
+
+| | |
+|---|---|
+| **Scenes** | 14 animated moods: Fire, Candlelight, Lava lamp, Ocean, Rain, Aurora, Night sky, Fireflies, Thunderstorm, Synthwave, Code rain, Sunset, Rainbow flow and Breathe. Each tile shows a live preview. Use **Speed** and **Brightness** to fine-tune them. |
+| **Custom** | Pick your own colours and a motion (still, flow, waves, pulse, flicker or twinkle), then save it as your own scene. |
+| **Paint your own** | Colour every key, every touch strip light and every button yourself, on a drawing of your keyboard. Save it as a look. |
+| **Scale guide** | Choose a key and a scale (major, minor, pentatonic, blues…). Its notes light up, with the root notes in red. |
+| **Light up what I play** | The switch at the top. The keys you press light up, from blue (soft) to red (hard), on top of whatever is showing. |
+| **Looks** | Ready-made static layouts and the ones you save. |
+
+## Questions
+
+**It says it can't find my keyboard.**
+Check that the keyboard is plugged in and switched on. The app connects by
+itself within a couple of seconds. If it still doesn't, quit the Komplete
+Kontrol app and try again.
+
+**My colours flicker or get replaced.**
+The Komplete Kontrol app and your music software's keyboard integration also
+control the lights. Close them while you use Kontrol LEDs.
+
+**Some buttons only light up white.**
+That's the keyboard's hardware: on the S88 MK2, only the keys, the touch strip,
+M, S, the display buttons and the encoder arrows have coloured lights. The
+drawing in the app shows exactly what the keyboard can do.
+
+**"Light up what I play" can't hear my keyboard.**
+Make sure no other program has taken the keyboard's MIDI input for itself.
+Some music programs do that. Then flip the switch off and on.
+
+**Do the lights stay on when I quit the app?**
+Quitting turns them off. Closing only the browser tab doesn't: the app keeps
+running in the tray.
+
+## Supported keyboards
+
+| Keyboard | Status |
+|---|---|
+| Komplete Kontrol **S88 MK2** | tested: keys, 42 buttons, touch strip |
+| Komplete Kontrol S49 MK2, S61 MK2 | should work (same design as the S88), not tested yet |
+| Komplete Kontrol S25 / S49 / S61 / S88 **MK1** | key lights only, not tested yet |
+
+Runs on Windows 10 and 11 (tested on Windows 11). Got one of the untested
+keyboards? Please tell us whether it works.
+
+---
+
+## For developers
+
+Everything the app does is also available from Python and a command line
+called `kkleds`. Support for each keyboard comes from **profiles**, JSON files
+in `src/kkleds/profiles/`. To add a keyboard, you write a profile, not code: see
+[docs/adding-a-device.md](docs/adding-a-device.md).
+
+### Setup
 
 ```powershell
-cd $HOME\Documents\kontrol-s88-leds
+git clone https://github.com/eliasehmann/kontrol-leds.git
+cd kontrol-leds
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -e ".[midi,dev]"     # midi = optional, for `kkleds follow`
-kkleds list                      # what's connected, and which profile it uses
-```
-
-Add `--dry-run` to any command to draw the result in the terminal instead of
-sending it to the keyboard.
-
-## Light guide
-
-```powershell
-kkleds colors                                   # the palette: 17 hues x (dim, medium, bright, pastel)
-kkleds fill blue
-kkleds fill red:0                               # dim (levels 0-2; plain "red" = 2)
-kkleds fill red:pastel                          # the whitish tint
-kkleds off
-
-kkleds set A0-B2=blue C3-B5=green C6-C8=orange  # keyboard split
-kkleds set C=white --base plum:0                # every C white on a dim plum background
-kkleds set "C4,E4,G4=yellow"                    # a chord shape
-
-kkleds scale D dorian                           # scale notes white, roots red
-kkleds scale A minor_pentatonic --color cyan --root-color orange --keys C3-C6
-kkleds gradient red yellow blue
-kkleds piano --white white:0 --black violet
-
-kkleds animate rainbow --speed 0.5              # also: chase, breathe, sparkle
-kkleds follow --velocity --sustain --meter      # light keys as you play
-```
-
-### Colours
-
-You can give a colour as:
-- `off`
-- a hue name: `red orange light_orange warm_yellow yellow lime green mint cyan
-  turquoise blue plum violet purple magenta fuchsia white`
-- a hue with a level: `:0`/`:dim`, `:1`/`:medium`, `:2`/`:bright` (the default)
-  or `:pastel`
-- true RGB: `#rrggbb`. Palette devices snap it to the nearest palette colour,
-  and RGB devices show it exactly.
-- a raw palette byte, like `0x2B`
-
-### Key selectors
-
-`all`, `white`, `black`, a pitch class (`C`, `F#` = every one on the keyboard), a
-note (`C4`, `60`), a range (`A0-C4`, `C4..C5`), or a comma list (`"C,E,G"`).
-Uses C4 = MIDI 60.
-
-## Buttons and touch strip
-
-```powershell
-kkleds buttons --list                          # names, slots, groups for your device
-kkleds buttons play=on rec=red stop=dim        # single-colour buttons: on / medium / dim / off
-kkleds buttons display=blue mute=red encoder=cyan
-kkleds buttons all=dim transport=on --base off
-kkleds strip rainbow
-kkleds strip blue green orange                 # gradient
-kkleds strip green --bar 60                    # level-meter style
-kkleds animate rainbow --strip                 # mirror an effect on the strip
-```
-
-The last button state is saved per device in `~/.kkleds/state/`, so separate
-commands don't wipe each other. Add `--reset` to start from all off.
-
-## Presets
-
-A preset is a list of light guide layers, plus an optional `buttons` section:
-
-```json
-{
-  "layers": [
-    { "fill": "off" },
-    { "keys": "A0-B2", "color": "blue" },
-    { "keys": "C3-C8", "gradient": ["green", "yellow"] },
-    { "scale": "C major", "color": "white:1", "root": "red", "other": "off" }
-  ],
-  "buttons": { "all": "dim", "transport": "on", "display": "blue:0", "strip": ["blue", "orange"] }
-}
-```
-
-```powershell
-kkleds preset presets\split-keyboard.json
-```
-
-Presets don't depend on a particular device. Keys outside a smaller keyboard's
-range are skipped, and a device without button LEDs skips the `buttons` section.
-
-## If the colours don't stick
-
-The NI background services (`NIHardwareService`, `NIHostIntegrationAgent`) also
-control the LEDs, especially while Komplete Kontrol or a DAW integration is
-running. Options:
-
-1. Add `--hold` to keep re-sending until Ctrl+C.
-2. Close Komplete Kontrol and your DAW.
-3. From an **admin** PowerShell, run `.\scripts\ni-services.ps1 stop`, then
-   `start` when you're done.
-
-## Adding devices
-
-```powershell
-kkleds list                                        # find the product ID
-kkleds profile-new --pid 0x1730 --key a49-mk1 --keys 49
-kkleds buttons-probe --model a49-mk1 --save $HOME\.kkleds\profiles\a49-mk1.json
-kkleds profile-check $HOME\.kkleds\profiles\a49-mk1.json
-```
-
-Full walkthrough and format: [docs/adding-a-device.md](docs/adding-a-device.md).
-S MK2 hardware notes: [docs/komplete-kontrol-s-mk2.md](docs/komplete-kontrol-s-mk2.md).
-
-## Development
-
-```powershell
+pip install -e ".[app,dev]"
+python -m kkleds.app        # the app, from source
 pytest
-python -m kkleds --help
 ```
+
+### Command line
+
+```powershell
+kkleds list                          # what's connected, and which profile it uses
+kkleds ui                            # the app's page without the tray icon (--dry-run = no keyboard)
+kkleds scene fire --speed 0.8        # play a scene (--list for all)
+kkleds preset split-keyboard         # show a look (--list for all)
+kkleds fill blue                     # colours: red, red:0-2, red:pastel, #ff8800, 0x2B
+kkleds set A0-B2=blue C3-C8=green    # keys: all, white, black, C, C4, A0-C4, "C,E,G"
+kkleds scale D dorian
+kkleds buttons play=on display=blue  # --list for every name and group
+kkleds strip rainbow
+kkleds follow --velocity --sustain   # play-along without the app
+kkleds devices                       # every known keyboard profile
+```
+
+`--dry-run` works with every command and draws the result in the terminal
+instead of on the keyboard.
+
+### Building the app
+
+```powershell
+.\scripts\build-windows.ps1          # runs the tests, then builds dist\KontrolLEDs.exe
+```
+
+### How it works
+
+- **USB:** the keyboard's lights are driven over USB HID. For the S MK2 there
+  are three messages: an init, the light guide (one palette colour per key),
+  and the buttons plus touch strip. Details:
+  [docs/komplete-kontrol-s-mk2.md](docs/komplete-kontrol-s-mk2.md).
+- **Smooth fades:** the S MK2 only has 3 brightness levels per colour, so
+  scenes use dithering. In a fade, the keys move to the next level one by one
+  instead of all jumping in steps.
+- **Local only:** the app's page is served only to your own computer
+  (127.0.0.1), and its API refuses requests that come from other websites.
+- **Your files:** settings, saved looks and saved scenes live in `~/.kkleds/`.
 
 | Module | What it does |
 |---|---|
-| `profile.py` | loads, merges and validates profiles; registry and USB matching |
-| `profiles/*.json` | built-in device profiles |
+| `profile.py`, `profiles/*.json` | keyboard profiles: USB IDs, reports, button map, panel drawing |
 | `encodings.py` | colour formats on the wire: palette, rgb, mono |
-| `colors.py` | NI palette, RGB values, parsing, gradients |
-| `notes.py` | note names, scales, key selectors |
-| `layout.py` | `Frame`: light guide painting and presets |
-| `buttons.py` | `ButtonFrame`: button and strip painting, saved state |
-| `device.py` | HID access and terminal dry-run, all driven by the profile |
-| `effects.py` | animations |
-| `cli.py` | the `kkleds` command |
+| `colors.py`, `notes.py` | NI palette, RGB, gradients; note names, scales, key selectors |
+| `layout.py`, `buttons.py` | painting keys, buttons and the touch strip |
+| `scenes.py`, `effects.py` | ambient scenes (with dithering) and simple animations |
+| `engine.py` | keeps the keyboard connected and runs the current mode, play-along and settings |
+| `webui.py`, `web/index.html` | the app's page and its local API |
+| `app.py`, `autostart.py`, `icon.py` | the desktop app: tray icon, single instance, start with Windows |
+| `device.py`, `midi.py`, `cli.py` | HID access, MIDI input, the `kkleds` command |
