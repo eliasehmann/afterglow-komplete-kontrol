@@ -1,11 +1,18 @@
-"""The Native Instruments indexed colour palette used by the light guide.
+"""Colours.
 
-The MK2 light guide does not take RGB. Each key gets one byte:
+A colour value is either:
 
-    byte = (hue_index << 2) | brightness
+* an ``int`` - an index into the Native Instruments palette, or
+* an ``Rgb`` - a true RGB colour (from "#rrggbb" or JSON [r, g, b]).
 
-where hue_index is 1..17 (see HUES, 17 = white) and 0 means off.
-The low two bits (confirmed on an S88 MK2):
+Devices convert to their own format through an encoding (see encodings.py), so
+the same preset works on palette keyboards (S MK2) and RGB ones (S MK1).
+
+The NI palette (as used by the S MK2 light guide and buttons, and Maschine MK3):
+
+    byte = (hue_index << 2) | level        0 = off
+
+hue_index is 1..17 (see HUES, 17 = white). Level, confirmed on an S88 MK2:
 
     0, 1, 2 = dim, medium, bright
     3       = "pastel": a washed-out, whitish tint of the hue (red:3 looks pink)
@@ -16,7 +23,16 @@ Plain colour names default to level 2 (bright, fully saturated).
 from __future__ import annotations
 
 import colorsys
-from typing import Optional, Tuple, Union
+from typing import List, NamedTuple, Optional, Sequence, Tuple, Union
+
+
+class Rgb(NamedTuple):
+    r: int
+    g: int
+    b: int
+
+
+ColorValue = Union[int, Rgb]
 
 HUES: Tuple[str, ...] = (
     "red",
@@ -38,7 +54,7 @@ HUES: Tuple[str, ...] = (
     "white",
 )
 
-# Approximate on-screen equivalents, used for previews and RGB matching.
+# Approximate on-screen equivalents, used for previews, RGB devices and matching.
 HUE_RGB = {
     "red": (255, 0, 0),
     "orange": (255, 70, 0),
@@ -95,7 +111,7 @@ def normalize(name: str) -> str:
 
 
 def make(hue: Union[str, int], brightness: int = DEFAULT_BRIGHTNESS) -> int:
-    """Build a colour byte from a hue name (or 1-based hue index) and level 0..3 (3 = pastel)."""
+    """Build a palette byte from a hue name (or 1-based hue index) and level 0..3 (3 = pastel)."""
     index = HUES.index(normalize(hue)) + 1 if isinstance(hue, str) else int(hue)
     if not 1 <= index <= len(HUES):
         raise ValueError(f"hue index must be 1..{len(HUES)}, got {index}")
@@ -105,22 +121,15 @@ def make(hue: Union[str, int], brightness: int = DEFAULT_BRIGHTNESS) -> int:
 
 
 def split(value: int) -> Tuple[Optional[str], int]:
-    """Return (hue name or None, brightness) for a colour byte."""
+    """Return (hue name or None, level) for a palette byte."""
     index = value >> 2
     if index == 0 or index > len(HUES):
         return None, 0
     return HUES[index - 1], value & 0b11
 
 
-def describe(value: int) -> str:
-    hue, brightness = split(value)
-    if hue is None:
-        return "off"
-    return f"{hue}:pastel" if brightness == PASTEL else f"{hue}:{brightness}"
-
-
 def to_rgb(value: int) -> Tuple[int, int, int]:
-    """Approximate RGB for a colour byte (for previews)."""
+    """Approximate RGB for a palette byte."""
     hue, brightness = split(value)
     if hue is None:
         return (0, 0, 0)
@@ -150,13 +159,47 @@ def from_rgb(r: int, g: int, b: int) -> int:
     return make(min(_HUE_ANGLE, key=distance), level)
 
 
-def parse(spec: Color) -> int:
-    """Parse a colour spec into a byte.
+# --------------------------------------------------------------------------- generic values
+def preview(value: ColorValue) -> Tuple[int, int, int]:
+    """RGB for any colour value."""
+    if isinstance(value, Rgb):
+        return (value.r, value.g, value.b)
+    return to_rgb(value)
+
+
+def to_palette(value: ColorValue) -> int:
+    """Palette byte for any colour value (RGB snaps to the nearest entry)."""
+    if isinstance(value, Rgb):
+        return from_rgb(*value)
+    return value
+
+
+def is_off(value: ColorValue) -> bool:
+    return preview(value) == (0, 0, 0)
+
+
+def describe(value: ColorValue) -> str:
+    if isinstance(value, Rgb):
+        return "#{:02x}{:02x}{:02x}".format(*value)
+    hue, brightness = split(value)
+    if hue is None:
+        return "off"
+    return f"{hue}:pastel" if brightness == PASTEL else f"{hue}:{brightness}"
+
+
+def parse(spec) -> ColorValue:
+    """Parse a colour spec.
 
     Accepts: "off", "red" (= red:2), "red:0".."red:2" (dim..bright),
-    "red:pastel" (= red:3), "red:dim/medium/bright", "#ff8800", "#f80",
-    "0x2b" (raw byte), "43" (raw byte) or an int.
+    "red:pastel" (= red:3), "red:dim/medium/bright", "0x2b" or "43" (raw
+    palette byte), an int, "#ff8800" / "#f80" or [r, g, b] (true RGB).
     """
+    if isinstance(spec, Rgb):
+        return spec
+    if isinstance(spec, (list, tuple)):
+        if len(spec) != 3 or not all(isinstance(c, int) and 0 <= c <= 255 for c in spec):
+            raise ValueError(f"RGB colour must be [r, g, b] with 0-255 values, got {spec!r}")
+        return Rgb(*spec)
     if isinstance(spec, int):
         value = spec
     else:
@@ -170,7 +213,7 @@ def parse(spec: Color) -> int:
             if len(digits) != 6:
                 raise ValueError(f"bad hex colour {spec!r}")
             n = int(digits, 16)
-            return from_rgb((n >> 16) & 0xFF, (n >> 8) & 0xFF, n & 0xFF)
+            return Rgb((n >> 16) & 0xFF, (n >> 8) & 0xFF, n & 0xFF)
         if s.startswith("0x"):
             value = int(s, 16)
         elif s.isdigit():
@@ -189,8 +232,33 @@ def parse(spec: Color) -> int:
     return value
 
 
-def gradient(stops, count: int):
-    """`count` colour bytes blending evenly through `stops`."""
+def lerp(a: ColorValue, b: ColorValue, t: float) -> ColorValue:
+    """Blend two colours along the hue wheel (shortest way round).
+
+    Two palette colours give a palette colour; if either is RGB, the result is RGB.
+    """
+    ha, sa, va = colorsys.rgb_to_hsv(*(c / 255 for c in preview(a)))
+    hb, sb, vb = colorsys.rgb_to_hsv(*(c / 255 for c in preview(b)))
+    if is_off(a):
+        ha, sa = hb, sb
+    if is_off(b):
+        hb, sb = ha, sa
+    dh = hb - ha
+    if dh > 0.5:
+        dh -= 1
+    elif dh < -0.5:
+        dh += 1
+    h = (ha + dh * t) % 1.0
+    s = sa + (sb - sa) * t
+    v = va + (vb - va) * t
+    r, g, bl = (round(c * 255) for c in colorsys.hsv_to_rgb(h, s, v))
+    if isinstance(a, Rgb) or isinstance(b, Rgb):
+        return Rgb(r, g, bl)
+    return from_rgb(r, g, bl)
+
+
+def gradient(stops: Sequence[ColorValue], count: int) -> List[ColorValue]:
+    """`count` colours blending evenly through `stops`."""
     stops = list(stops)
     if not stops:
         raise ValueError("gradient needs at least one colour")
@@ -203,23 +271,3 @@ def gradient(stops, count: int):
         seg = min(int(t), segments - 1)
         out.append(lerp(stops[seg], stops[seg + 1], t - seg))
     return out
-
-
-def lerp(a: int, b: int, t: float) -> int:
-    """Blend two colour bytes along the hue wheel (shortest way round)."""
-    ha, sa, va = colorsys.rgb_to_hsv(*(c / 255 for c in to_rgb(a)))
-    hb, sb, vb = colorsys.rgb_to_hsv(*(c / 255 for c in to_rgb(b)))
-    if a == OFF:
-        ha, sa = hb, sb
-    if b == OFF:
-        hb, sb = ha, sa
-    dh = hb - ha
-    if dh > 0.5:
-        dh -= 1
-    elif dh < -0.5:
-        dh += 1
-    h = (ha + dh * t) % 1.0
-    s = sa + (sb - sa) * t
-    v = va + (vb - va) * t
-    r, g, bl = colorsys.hsv_to_rgb(h, s, v)
-    return from_rgb(round(r * 255), round(g * 255), round(bl * 255))

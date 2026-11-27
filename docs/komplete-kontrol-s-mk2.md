@@ -1,6 +1,9 @@
-# S88 MK2 LED protocol notes
+# Komplete Kontrol S-Series MK2: LED protocol notes
 
-What `kkleds` sends to the keyboard, and how sure we are about each part.
+These are the hardware findings behind
+`src/kkleds/profiles/komplete-kontrol-s-mk2.json`. Everything here was tested
+on an **S88 MK2**. The S49 and S61 MK2 share the profile but are unverified:
+they probably match, but nobody has tested them yet.
 
 ## USB identity (confirmed on this PC)
 

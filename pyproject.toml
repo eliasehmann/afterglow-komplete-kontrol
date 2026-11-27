@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kkleds"
-version = "0.1.0"
-description = "Customise the light guide and button LEDs of a Native Instruments Komplete Kontrol S88 MK2"
+version = "0.2.0"
+description = "Customise the light guide and button LEDs of Native Instruments keyboards, driven by device profiles"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = ["hidapi>=0.14"]
@@ -19,6 +19,9 @@ kkleds = "kkleds.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+kkleds = ["profiles/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

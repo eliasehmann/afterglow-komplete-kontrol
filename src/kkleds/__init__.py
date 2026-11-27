@@ -1,6 +1,7 @@
-"""Customise the LEDs of Native Instruments Komplete Kontrol S-series MK2 keyboards."""
+"""Customise the LEDs of Native Instruments keyboards, driven by device profiles."""
 
-from .layout import MODELS, S88, Frame, Model
+from .layout import Frame
+from .profile import Profile, Registry, load_registry
 
-__all__ = ["Frame", "Model", "MODELS", "S88"]
-__version__ = "0.1.0"
+__all__ = ["Frame", "Profile", "Registry", "load_registry"]
+__version__ = "0.2.0"

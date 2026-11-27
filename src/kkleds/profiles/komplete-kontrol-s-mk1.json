@@ -1,0 +1,35 @@
+{
+  "id": "komplete-kontrol-s-mk1",
+  "name": "Komplete Kontrol S-Series MK1",
+  "vendor_id": "0x17CC",
+  "status": "unverified",
+  "source": "Light guide layout from ojacques/SynthesiaKontrol (report 0x82, 3 RGB bytes per key). Not yet tested on hardware here.",
+  "notes": "Button LEDs not mapped. If colours look swapped, change light_guide.encoding.order (e.g. \"grb\").",
+  "init": [["0xA0", "0x00", "0x00"]],
+  "light_guide": {
+    "report": "0x82",
+    "encoding": { "type": "rgb", "order": "rgb", "max": 255 }
+  },
+  "variants": {
+    "s25-mk1": {
+      "name": "Komplete Kontrol S25 MK1",
+      "product_id": "0x1340",
+      "light_guide": { "keys": 25, "lowest_note": 48 }
+    },
+    "s49-mk1": {
+      "name": "Komplete Kontrol S49 MK1",
+      "product_id": "0x1350",
+      "light_guide": { "keys": 49, "lowest_note": 36 }
+    },
+    "s61-mk1": {
+      "name": "Komplete Kontrol S61 MK1",
+      "product_id": "0x1360",
+      "light_guide": { "keys": 61, "lowest_note": 36 }
+    },
+    "s88-mk1": {
+      "name": "Komplete Kontrol S88 MK1",
+      "product_id": "0x1410",
+      "light_guide": { "keys": 88, "lowest_note": 21 }
+    }
+  }
+}

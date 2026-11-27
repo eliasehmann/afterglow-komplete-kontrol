@@ -1,0 +1,89 @@
+{
+  "id": "komplete-kontrol-s-mk2",
+  "name": "Komplete Kontrol S-Series MK2",
+  "vendor_id": "0x17CC",
+  "status": "unverified",
+  "source": "Mapped by hand on an S88 MK2 (Windows 11). Init report from ojacques/SynthesiaKontrol.",
+  "notes": "Octave -/+ lights are driven by the firmware, not report 0x80. The knobs have no LEDs.",
+  "hid": { "interface": 2 },
+  "init": [["0xA0", "0x00", "0x00"]],
+  "light_guide": { "report": "0x81", "encoding": "palette" },
+  "buttons": {
+    "report": "0x80",
+    "size": 69,
+    "encoding": "palette",
+    "leds": {
+      "mute": 0,
+      "solo": 1,
+      "display_1": 2, "display_2": 3, "display_3": 4, "display_4": 5,
+      "display_5": 6, "display_6": 7, "display_7": 8, "display_8": 9,
+      "encoder_left": 10,
+      "encoder_up": 11,
+      "encoder_down": 12,
+      "encoder_right": 13,
+      "shift": 14,
+      "scale_edit": 15,
+      "arp_edit": 16,
+      "scene": 17,
+      "undo_redo": 18,
+      "quantize": 19,
+      "auto": 20,
+      "pattern": 21,
+      "preset_up": 22,
+      "track": 23,
+      "loop": 24,
+      "metro": 25,
+      "tempo": 26,
+      "preset_down": 27,
+      "key_mode": 28,
+      "play": 29,
+      "rec": 30,
+      "stop": 31,
+      "preset_left": 32,
+      "preset_right": 33,
+      "clear": 34,
+      "browser": 35,
+      "plugin": 36,
+      "mixer": 37,
+      "instance": 38,
+      "midi": 39,
+      "setup": 40,
+      "fixed_vel": 41
+    },
+    "strip": { "first": 44, "length": 25 },
+    "aliases": {
+      "dis1": "display_1", "dis2": "display_2", "dis3": "display_3", "dis4": "display_4",
+      "dis5": "display_5", "dis6": "display_6", "dis7": "display_7", "dis8": "display_8",
+      "4dleft": "encoder_left", "4dtop": "encoder_up", "4dup": "encoder_up",
+      "4dbot": "encoder_down", "4ddown": "encoder_down", "4dright": "encoder_right",
+      "record": "rec", "metronome": "metro", "scale": "scale_edit", "arp": "arp_edit", "undo": "undo_redo"
+    },
+    "groups": {
+      "display": ["display_1", "display_2", "display_3", "display_4", "display_5", "display_6", "display_7", "display_8"],
+      "encoder": ["encoder_left", "encoder_up", "encoder_down", "encoder_right"],
+      "transport": ["loop", "metro", "tempo", "play", "rec", "stop"],
+      "preset": ["preset_up", "preset_down", "preset_left", "preset_right"],
+      "browse": ["browser", "plugin", "mixer", "instance", "midi", "setup"],
+      "edit": ["scale_edit", "arp_edit", "undo_redo", "quantize", "auto"]
+    },
+    "color": ["mute", "solo", "display", "encoder", "strip"]
+  },
+  "variants": {
+    "s49-mk2": {
+      "name": "Komplete Kontrol S49 MK2",
+      "product_id": "0x1610",
+      "light_guide": { "keys": 49, "lowest_note": 36 }
+    },
+    "s61-mk2": {
+      "name": "Komplete Kontrol S61 MK2",
+      "product_id": "0x1620",
+      "light_guide": { "keys": 61, "lowest_note": 36 }
+    },
+    "s88-mk2": {
+      "name": "Komplete Kontrol S88 MK2",
+      "product_id": "0x1630",
+      "status": "verified",
+      "light_guide": { "keys": 88, "lowest_note": 21 }
+    }
+  }
+}

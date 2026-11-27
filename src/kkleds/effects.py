@@ -7,7 +7,7 @@ import random
 from typing import Iterator, List, Optional
 
 from . import colors
-from .layout import Model
+from .profile import Profile as Model  # effects only need .key_count
 
 Frames = Iterator[List[int]]
 
@@ -30,7 +30,7 @@ def rainbow(model: Model, fps: float, speed: float = 1.0, cycles: float = 1.0, *
 def chase(model: Model, fps: float, speed: float = 1.0, color: Optional[int] = None, width: int = 4, **_) -> Frames:
     """A bright dot with a fading tail running up and down the keys."""
     n = model.key_count
-    hue, _b = colors.split(color or colors.make("cyan"))
+    hue, _b = colors.split(colors.to_palette(color) if color else colors.make("cyan"))
     hue = hue or "cyan"
     span = 2 * (n - 1)
     t = 0
@@ -50,7 +50,7 @@ def chase(model: Model, fps: float, speed: float = 1.0, color: Optional[int] = N
 
 def breathe(model: Model, fps: float, speed: float = 1.0, color: Optional[int] = None, **_) -> Frames:
     """The whole keyboard pulses (the hardware only has 3 brightness steps + off)."""
-    hue, _b = colors.split(color or colors.make("blue"))
+    hue, _b = colors.split(colors.to_palette(color) if color else colors.make("blue"))
     hue = hue or "blue"
     t = 0
     while True:
@@ -67,7 +67,7 @@ def sparkle(model: Model, fps: float, speed: float = 1.0, color: Optional[int] =
     density = average sparks per key per second (at speed 1).
     """
     n = model.key_count
-    fixed_hue = colors.split(color)[0] if color else None
+    fixed_hue = colors.split(colors.to_palette(color))[0] if color else None
     level = [-1] * n
     hue = ["white"] * n
     rng = random.Random()
